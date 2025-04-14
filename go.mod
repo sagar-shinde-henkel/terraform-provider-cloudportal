@@ -1,4 +1,4 @@
-module main.go
+module github.com/terraform-provider-cloudportal/cloudportal
 
 go 1.23.6
 

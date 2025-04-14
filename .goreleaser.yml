@@ -4,3 +4,12 @@ builds:
     env: [ "CGO_ENABLED=0" ]
     goos: [ linux, darwin, windows ]
     goarch: [ amd64, arm64 ]
+signs:
+  - artifacts: checksum
+    args:
+      - "--batch"
+      - "--pinentry-mode=loopback"
+      - "--passphrase=${GPG_PASSPHRASE}"
+    signature: "${artifact}.asc"
+    # Use the FULL fingerprint (40 chars):
+    fingerprint: "2048DB3BD8F437EBBE99D0FF2D8B226936CA26C4"  # Replace with your key's fingerprint
