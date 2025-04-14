@@ -7,6 +7,8 @@ on:
 
 env:
   # Global environment variables
+  env:
+  TF_REGISTRY_API_TOKEN: ${{ secrets.TF_REGISTRY_API_TOKEN }}
   GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
   GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
   HASHICORP_API_TOKEN: ${{ secrets.TF_REGISTRY_API_TOKEN }}
@@ -54,17 +56,20 @@ jobs:
 
       - name: Publish to Terraform Registry
         if: success()
+        env:
+          TF_REGISTRY_API_TOKEN: ${{ secrets.TF_REGISTRY_API_TOKEN }}
+          GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           curl -X POST \
-            -H "Authorization: Bearer ${{ env.HASHICORP_API_TOKEN }}" \
+            -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
             -d '{
               "data": {
                 "type": "registry-provider-versions",
                 "attributes": {
                   "version": "'"$VERSION"'",
-                  "key-id": "'"${{ env.GPG_FINGERPRINT }}"'"
+                  "key-id": "'"$GPG_FINGERPRINT"'"
                 }
               }
             }' \
