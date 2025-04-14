@@ -11,5 +11,7 @@ signs:
       - "--pinentry-mode=loopback"
       - "--passphrase=${GPG_PASSPHRASE}"
     signature: "${artifact}.asc"
+    #env:
+    #  - GPG_FINGERPRINT  # Your key's 40-char fingerprint
     # Use the FULL fingerprint (40 chars):
-    fingerprint: "2048DB3BD8F437EBBE99D0FF2D8B226936CA26C4"  # Replace with your key's fingerprint
+    GPG_FINGERPRINT: "2048DB3BD8F437EBBE99D0FF2D8B226936CA26C4"  # Replace with your key's fingerprint
