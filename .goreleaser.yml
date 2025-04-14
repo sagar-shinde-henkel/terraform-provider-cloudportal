@@ -7,12 +7,6 @@ builds:
     goarch: [ amd64, arm64 ]
     ldflags:
       - "-s -w -X main.version={{.Version}}"
-    # Terraform provider specific settings
-    main: ./main.go
-    hooks:
-      post: |
-        mkdir -p {{ .ArtifactsDir }}/terraform-provider-cloudportal/{{ .Version }}/{{ .Os }}_{{ .Arch }}
-        mv {{ .ArtifactsDir }}/{{ .Binary }} {{ .ArtifactsDir }}/terraform-provider-cloudportal/{{ .Version }}/{{ .Os }}_{{ .Arch }}
 
 archives:
   - formats: [tar.gz]  # Changed from 'formats' to singular 'format'
