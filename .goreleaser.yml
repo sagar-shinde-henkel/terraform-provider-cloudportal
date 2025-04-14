@@ -18,21 +18,3 @@ archives:
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
-
-signs:
-  - artifacts: checksum
-    signature: "${artifact}.asc"
-    args:
-      - "--batch"
-      - "--pinentry-mode=loopback"
-      - "--passphrase=${GPG_PASSPHRASE}"
-    env:
-      - GPG_FINGERPRINT
-
-# Terraform provider metadata
-blobs:
-  - provider: terraform
-    folder: "terraform-provider-cloudportal/{{ .Version }}"
-    extra_files:
-      - src: "terraform-provider-cloudportal/{{ .Version }}/*"
-        dst: ""
