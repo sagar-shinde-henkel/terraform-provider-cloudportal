@@ -18,3 +18,15 @@ archives:
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
+
+signs:
+  - artifacts: checksum
+    signature: "${artifact}.asc"
+    args:
+      - "--batch"
+      - "--pinentry-mode=loopback"
+      - "--passphrase=${GPG_PASSPHRASE}"
+    env:
+      - GPG_FINGERPRINT
+    # Ensure this generates SHA256SUMS.sig
+    ids: [ "checksum" ]
