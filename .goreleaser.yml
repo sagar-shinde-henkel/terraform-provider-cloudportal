@@ -1,11 +1,29 @@
 version: 2
 builds:
-  - binary: "cloudportal"
+  - id: "cloudportal"  # Added build ID for better reference
+    binary: "terraform-provider-cloudportal"  # Explicit binary name matching Terraform conventions
     env: [ "CGO_ENABLED=0" ]
     goos: [ linux, darwin, windows ]
     goarch: [ amd64, arm64 ]
     ldflags:
       - "-s -w -X main.version={{.Version}}"
+    # Terraform provider specific settings
+    main: ./main.go
+    hooks:
+      post: |
+        mkdir -p {{ .ArtifactsDir }}/terraform-provider-cloudportal/{{ .Version }}/{{ .Os }}_{{ .Arch }}
+        mv {{ .ArtifactsDir }}/{{ .Binary }} {{ .ArtifactsDir }}/terraform-provider-cloudportal/{{ .Version }}/{{ .Os }}_{{ .Arch }}
+
+archives:
+  - formats: [tar.gz]  # Changed from 'formats' to singular 'format'
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE*  # Include license file
+      - README*   # Include documentation
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
+  algorithm: sha256
 
 signs:
   - artifacts: checksum
@@ -15,11 +33,12 @@ signs:
       - "--pinentry-mode=loopback"
       - "--passphrase=${GPG_PASSPHRASE}"
     env:
-      - GPG_FINGERPRINT  # Set this in your CI environment
+      - GPG_FINGERPRINT
 
-archives:
-  - format: tar.gz
-    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-
-checksum:
-  name_template: "{{ .Binary }}_{{ .Version }}_SHA256SUMS"
+# Terraform provider metadata
+blobs:
+  - provider: terraform
+    folder: "terraform-provider-cloudportal/{{ .Version }}"
+    extra_files:
+      - src: "terraform-provider-cloudportal/{{ .Version }}/*"
+        dst: ""
