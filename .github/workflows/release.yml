@@ -3,26 +3,32 @@ name: Release Terraform Provider
 on:
   push:
     tags:
-      - 'v*.*.*'  # Requires semantic versioning (e.g., v1.2.3)
+      - 'v*.*.*'  # Triggers on semantic version tags (e.g., v1.2.3)
+
+env:
+  # Global environment variables
+  GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
+  GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+  HASHICORP_API_TOKEN: ${{ secrets.TF_REGISTRY_API_TOKEN }}
 
 permissions:
   contents: write
-  id-token: write  # Required for HashiCorp registry authentication
+  id-token: write  # Required for HashiCorp registry auth
 
 jobs:
-  goreleaser:
+  release:
     runs-on: ubuntu-latest
     environment: release
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Required for full Git history
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          #go-version-file: 'go.mod'
+          go-version-file: 'go.mod'
           cache: true
 
       - name: Install dependencies
@@ -30,39 +36,36 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gpg
 
-      - name: Import GPG Key
-        run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --import
-          echo "GPG_FINGERPRINT=${{ secrets.GPG_FINGERPRINT }}" >> $GITHUB_ENV
+      - name: Import GPG key
+        id: import_gpg
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ env.GPG_PASSPHRASE }}
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
-          HASHICORP_API_TOKEN: ${{ secrets.TF_REGISTRY_API_TOKEN }}
+          # Inherits GPG_FINGERPRINT and GPG_PASSPHRASE from global env
 
       - name: Publish to Terraform Registry
         if: success()
         run: |
-          # Get the version from the tag
           VERSION=${GITHUB_REF#refs/tags/v}
-          
-          # Generate the provider metadata
-          cat > version.txt <<EOF
-          version = "$VERSION"
-          protocols = ["5.0"]
-          os = ["darwin", "linux", "windows"]
-          arch = ["amd64", "arm64"]
-          EOF
-          
-          # Upload to HashiCorp registry
-          curl \
-            --header "Authorization: Bearer ${{ secrets.TF_REGISTRY_API_TOKEN }}" \
-            --header "Content-Type: application/json" \
-            --request POST \
-            --data @version.txt \
-            "https://registry.terraform.io/v2/providers/[NAMESPACE]/[NAME]/versions"
+          curl -X POST \
+            -H "Authorization: Bearer ${{ env.HASHICORP_API_TOKEN }}" \
+            -H "Content-Type: application/vnd.api+json" \
+            -d '{
+              "data": {
+                "type": "registry-provider-versions",
+                "attributes": {
+                  "version": "'"$VERSION"'",
+                  "key-id": "'"${{ env.GPG_FINGERPRINT }}"'"
+                }
+              }
+            }' \
+            "https://registry.terraform.io/v2/providers/terrafprm-provider-cloudportal/cloudportal/versions"
