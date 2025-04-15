@@ -12,6 +12,8 @@ env:
   GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
   GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
   HASHICORP_API_TOKEN: ${{ secrets.TF_REGISTRY_API_TOKEN }}
+with:
+  gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
 
 permissions:
   contents: write
@@ -97,12 +99,26 @@ jobs:
           echo "Test signing:"
           echo "test" | gpg --clearsign --batch --yes --local-user "${GPG_KEY_ID}" || echo "Test signing failed"
 
+      - name: Debug GPG
+        run: |
+          echo "Fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
+          gpg --list-secret-keys --with-colons
+
+      - name: Test GPG
+        run: |
+          echo "test" > test.txt
+          gpg --batch --yes --pinentry-mode=loopback \
+              --passphrase="$GPG_PASSPHRASE" \
+              --local-user="$GPG_FINGERPRINT" \
+              --armor --detach-sign --output test.sig test.txt
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
           args: release --clean
         env:
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}  # Critical
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }} # Pass the key ID to GoReleaser
 
