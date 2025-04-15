@@ -79,12 +79,12 @@ jobs:
       #   echo "=== TEST SIGNING ==="
       #   echo "test123" | gpg --clearsign --batch --yes --pinentry-mode loopback --local-user "$GPG_KEY_ID"
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
-        with:
-          args: release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #- name: Run GoReleaser
+      # uses: goreleaser/goreleaser-action@v4
+      # with:
+      #   args: release
+      # env:
+      #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Verify Environment
         env:
