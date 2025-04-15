@@ -38,12 +38,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gpg
 
-      - name: Import GPG key
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v6
-        with:
-          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
-          passphrase: ${{ env.GPG_PASSPHRASE }}
+      - name: Import GPG Key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}  # Your armored private key
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          # Disable passphrase prompts (critical for keys without passphrase)
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          gpgconf --kill gpg-agent  # Restart agent to apply changes
+      
+      - name: Test GPG Signing
+        run: |
+          echo "test" | gpg --clearsign --batch --yes  # Should NOT prompt for passphrase
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4

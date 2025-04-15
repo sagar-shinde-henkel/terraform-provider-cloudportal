@@ -24,8 +24,8 @@ signs:
     signature: "${artifact}.asc"
     args:
       - "--batch"
+      - "--yes"
       - "--pinentry-mode=loopback"
-      - "--passphrase=${GPG_PASSPHRASE}"
     env:
       - GPG_FINGERPRINT
     # Ensure this generates SHA256SUMS.sig
