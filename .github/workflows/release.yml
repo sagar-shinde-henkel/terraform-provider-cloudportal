@@ -54,20 +54,25 @@ jobs:
       - name: Setup GPG
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
         run: |
+          # Install GPG (if not already present)
           sudo apt-get update && sudo apt-get install -y gnupg
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          # Configure GPG for non-interactive use
+          # Create and secure GPG directory
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          # Import private key
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          # Configure for non-interactive use
+          echo "pinentry-mode loopback" > ~/.gnupg/gpg.conf
           echo "use-agent" >> ~/.gnupg/gpg.conf
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          # Trust the key
-          echo -e "5\ny\n" | gpg --command-fd 0 --edit-key "$GPG_KEY_ID" trust
+          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
+          # Trust the key (non-interactively)
+          echo -e "trust\n5\ny\nsave\n" | gpg --command-fd 0 --status-fd 1 --edit-key "$GPG_KEY_ID"
           # Verify setup
-          echo "Test signing..."
-          echo "test" | gpg --clearsign --batch --yes --local-user "$GPG_KEY_ID"
+          gpg --list-secret-keys --keyid-format LONG
+          echo "Test signing:"
+          echo "test" | gpg --clearsign --batch --yes --pinentry-mode loopback --local-user "$GPG_KEY_ID"
  
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
