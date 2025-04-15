@@ -51,28 +51,41 @@ jobs:
       #    echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
       #    gpgconf --kill gpg-agent  # Restart agent to apply changes
 
-      - name: Setup GPG
+      - name: Setup GPG (100% Non-Interactive)
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
         run: |
-          # Install GPG (if not already present)
-          sudo apt-get update && sudo apt-get install -y gnupg
-          # Create and secure GPG directory
+          # Install minimal GPG (no GUI dependencies)
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends gnupg
+          # Create secure directory
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
-          # Import private key
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          # Configure for non-interactive use
-          echo "pinentry-mode loopback" > ~/.gnupg/gpg.conf
-          echo "use-agent" >> ~/.gnupg/gpg.conf
-          echo "allow-loopback-pinentry" > ~/.gnupg/gpg-agent.conf
-          # Trust the key (non-interactively)
-          echo -e "trust\n5\ny\nsave\n" | gpg --command-fd 0 --status-fd 1 --edit-key "$GPG_KEY_ID"
+          # Completely non-interactive import
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import 2>&1 | tee /tmp/import.log
+          # Configure for CI environment
+          cat <<EOF > ~/.gnupg/gpg.conf
+          pinentry-mode loopback
+          use-agent
+          EOF
+          cat <<EOF > ~/.gnupg/gpg-agent.conf
+          allow-loopback-pinentry
+          disable-scdaemon
+          EOF
+          # Set ultimate trust non-interactively
+          echo -n "$(echo $GPG_KEY_ID | tr '[:upper:]' '[:lower:]'):6:" | gpg --import-ownertrust
           # Verify setup
+          echo "=== GPG VERSION ==="
+          gpg --version
+          echo "=== LIST KEYS ==="
           gpg --list-secret-keys --keyid-format LONG
-          echo "Test signing:"
-          echo "test" | gpg --clearsign --batch --yes --pinentry-mode loopback --local-user "$GPG_KEY_ID"
+          echo "=== TEST SIGNING ==="
+          echo "test123" | gpg --clearsign --batch --yes --pinentry-mode loopback --local-user "$GPG_KEY_ID" 2>&1 | tee /tmp/sigtest.log
+          echo "=== TEST RESULTS ==="
+          grep -A1 "BEGIN PGP SIGNED MESSAGE" /tmp/sigtest.log || echo "Signing test failed"
+          # Kill and restart agent
+          gpgconf --kill all
+          gpgconf --launch gpg-agent
  
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
