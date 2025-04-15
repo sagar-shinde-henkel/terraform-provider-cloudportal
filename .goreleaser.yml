@@ -26,7 +26,6 @@ signs:
       - "--batch"
       - "--yes"
       - "--pinentry-mode=loopback"
+      - "--local-user={{ .Env.GPG_KEY_ID }}"  # Now properly using the env var
     env:
-      - GPG_FINGERPRINT
-    # Ensure this generates SHA256SUMS.sig
-    ids: [ "checksum" ]
+      - GPG_KEY_ID  # This makes the variable available to GoReleaser

@@ -47,9 +47,10 @@ jobs:
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
           gpgconf --kill gpg-agent  # Restart agent to apply changes
       
-      - name: Test GPG Signing
+      - name: Verify Environment
         run: |
-          echo "test" | gpg --clearsign --batch --yes  # Should NOT prompt for passphrase
+          echo "Using GPG Key ID: ${GPG_KEY_ID}"
+          gpg --list-keys "${GPG_KEY_ID}"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
@@ -58,7 +59,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Inherits GPG_FINGERPRINT and GPG_PASSPHRASE from global env
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}  # Pass the key ID to GoReleaser
 
       - name: Publish to Terraform Registry
         if: success()
