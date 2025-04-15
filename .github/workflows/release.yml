@@ -105,7 +105,7 @@ jobs:
           echo "test" > test.txt
           gpg --batch --yes --pinentry-mode=loopback \
               --passphrase="$GPG_PASSPHRASE" \
-              --local-user="$GPG_FINGERPRINT" \
+              --local-user=${{ steps.import_gpg.outputs.fingerprint }} \
               --armor --detach-sign --output test.sig test.txt
 
       - name: Run GoReleaser
