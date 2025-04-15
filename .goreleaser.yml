@@ -26,6 +26,12 @@ signs:
       - "--batch"
       - "--yes"
       - "--pinentry-mode=loopback"
-      - "--local-user={{ .Env.GPG_KEY_ID }}"  # Now properly using the env var
+      - "--output=${signature}"
+      - "--armor"
+      - "--detach-sign"
+      - "--local-user=${GPG_FINGERPRINT}"
+      - "--"
+      - "${artifact}"
     env:
+      - GPG_FINGERPRINT
       - GPG_KEY_ID  # This makes the variable available to GoReleaser
