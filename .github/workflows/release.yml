@@ -117,7 +117,7 @@ jobs:
           GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          curl -X POST \
+          curl -v -X POST \
             -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
             -d '{
