@@ -21,7 +21,7 @@ checksum:
 
 signs:
   - artifacts: checksum
-    signature: "${artifact}.asc"
+    signature: "${artifact}.sig"
     args:
       - "--batch"
       - "--yes"
