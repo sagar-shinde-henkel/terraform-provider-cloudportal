@@ -21,11 +21,15 @@ jobs:
   release:
     runs-on: ubuntu-latest
     environment: release
+    env:
+      GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Required for full Git history
+        
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -38,14 +42,39 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gpg
 
-      - name: Import GPG Key
+      #- name: Import GPG Key
+      #  env:
+      #    GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}  # Your armored private key
+      #  run: |
+      #    echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+      #    # Disable passphrase prompts (critical for keys without passphrase)
+      #    echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+      #    gpgconf --kill gpg-agent  # Restart agent to apply changes
+
+      - name: Setup GPG
         env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}  # Your armored private key
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
+          sudo apt-get update && sudo apt-get install -y gnupg
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          # Disable passphrase prompts (critical for keys without passphrase)
+          # Configure GPG for non-interactive use
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-          gpgconf --kill gpg-agent  # Restart agent to apply changes
+          echo "use-agent" >> ~/.gnupg/gpg.conf
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          # Trust the key
+          echo -e "5\ny\n" | gpg --command-fd 0 --edit-key "$GPG_KEY_ID" trust
+          # Verify setup
+          echo "Test signing..."
+          echo "test" | gpg --clearsign --batch --yes --local-user "$GPG_KEY_ID"
+ 
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Verify Environment
         env:
