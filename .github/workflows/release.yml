@@ -100,14 +100,6 @@ jobs:
           echo "Fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
           gpg --list-secret-keys --with-colons
 
-      - name: Test GPG
-        run: |
-          echo "test" > test.txt
-          gpg --batch --yes --pinentry-mode=loopback \
-              --passphrase="$GPG_PASSPHRASE" \
-              --local-user=${{ steps.import_gpg.outputs.fingerprint }} \
-              --armor --detach-sign --output test.sig test.txt
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         with:
