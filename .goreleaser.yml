@@ -1,12 +1,17 @@
 version: 2
 builds:
-  - id: "cloudportal"  # Added build ID for better reference
-    binary: "terraform-provider-cloudportal"  # Explicit binary name matching Terraform conventions
-    env: [ "CGO_ENABLED=0" ]
-    goos: [ linux, darwin, windows ]
-    goarch: [ amd64, arm64 ]
-    ldflags:
-      - "-s -w -X main.version={{.Version}}"
+  - id: "provider"
+    binary: "terraform-provider-cloudportal_{{.Version}}"  # Must follow this naming
+    env: ["CGO_ENABLED=0"]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags: ["-s -w -X main.version={{.Version}}"]
+    hooks:
+      post: |
+        # Create Terraform-required directory structure
+        mkdir -p {{.ArtifactsDir}}/terraform-provider-cloudportal/{{.Version}}/{{.Os}}_{{.Arch}}
+        mv {{.ArtifactsDir}}/{{.Binary}} {{.ArtifactsDir}}/terraform-provider-cloudportal/{{.Version}}/{{.Os}}_{{.Arch}}/
 
 archives:
   - formats: [tar.gz]  # Changed from 'formats' to singular 'format'
