@@ -3,7 +3,7 @@ builds:
   - id: "provider"
     binary: "terraform-provider-cloudportal_{{.Version}}"  # Must follow this naming
     env: ["CGO_ENABLED=0"]
-    goos: [linux, darwin, windows]
+    goos: [darwin]
     goarch: [amd64, arm64]
     flags: [-trimpath]
     ldflags: ["-s -w -X main.version={{.Version}}"]
