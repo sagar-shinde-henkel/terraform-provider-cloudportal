@@ -1,6 +1,6 @@
 version: 2
 builds:
-  - id: "terraform-provider-cloudportal"
+  - id: "provider"
     binary: "terraform-provider-cloudportal"  # Must follow this naming
     env: ["CGO_ENABLED=0"]
     goos: [darwin]
@@ -10,7 +10,7 @@ builds:
     hooks:
       post: |
         # Create Terraform-required structure
-        mkdir -p "terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
+        mkdir -p "{{ .ArtifactsDir }}/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
         mv "{{ .ArtifactsDir }}/{{ .Binary }}" "{{ .ArtifactsDir }}/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/"
 
 archives:
@@ -41,9 +41,5 @@ signs:
     env:
       - GPG_FINGERPRINT
       - GPG_KEY_ID  # This makes the variable available to GoReleaser
-
-release:
-  disable: true
-
 
 
