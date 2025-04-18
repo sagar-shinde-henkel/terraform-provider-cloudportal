@@ -129,4 +129,4 @@ jobs:
                 }
               }
             }' \
-            "https://registry.terraform.io/v2/providers/sagar-shinde-henkel/terraform-provider-cloudportal/versions"
+            "https://registry.terraform.io/v2/providers/sagar-shinde-henkel/cloudportal/versions"
