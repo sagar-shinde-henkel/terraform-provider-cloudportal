@@ -29,7 +29,7 @@ checksum:
 
 signs:
   - artifacts: checksum
-    signature: "${artifact}.sig"
+    signature: "${artifact}.asc"
     args:
       - "--batch"
       - "--yes"
