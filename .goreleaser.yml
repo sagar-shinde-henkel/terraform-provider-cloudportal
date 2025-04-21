@@ -12,7 +12,7 @@ builds:
         - echo "Creating Terraform directory..."
         - mkdir -p dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}
         - echo "Moving binary... "
-        - mv {{ .Path }} dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/
+        - cp {{ .Path }} dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/
 
 
 archives:
