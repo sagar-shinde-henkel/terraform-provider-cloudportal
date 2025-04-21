@@ -35,7 +35,6 @@ signs:
       - "--pinentry-mode=loopback"
       - "--passphrase=${GPG_PASSPHRASE}"
       - "--output=${signature}"
-      - "--armor"
       - "--detach-sign"
       - "--local-user=${GPG_FINGERPRINT}"
     env:
