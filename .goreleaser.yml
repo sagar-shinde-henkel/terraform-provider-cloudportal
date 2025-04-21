@@ -7,9 +7,10 @@ builds:
     ldflags: "-s -w -X main.version={{.Version}}"
     env: [CGO_ENABLED=0]
     hooks:
-      post: |
-        # Create Terraform-required directory structure
+      post:
+        - echo "Creating Terraform directory..."
         - mkdir -p dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}
+        - echo "Moving binary... "
         - mv {{ .Path }} dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/
 
 
