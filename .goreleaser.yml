@@ -21,7 +21,6 @@ archives:
     wrap_in_directory: false
     files:
       - README.md
-      - - dist/{{ .Binary }}_v{{ .Version }}
 
 checksum:
   name_template: "terraform-provider-cloudportal_{{ .Version }}_SHA256SUMS"
