@@ -1,38 +1,41 @@
 version: 2
 builds:
-  - binary: terraform-provider-cloudportal
-    goos:
-      - darwin
-    goarch:
-      - amd64
-      - arm64
-    ldflags: "-X main.version={{.Version}}"
-    mod_timestamp: "{{ .CommitTimestamp }}"
-    env:
-      - CGO_ENABLED=0
+  - id: "provider"
+    binary: "terraform-provider-cloudportal"
+    goos: [darwin, linux, windows]  # Add all required OSes
+    goarch: [amd64, arm64]
+    ldflags: "-s -w -X main.version={{.Version}}"
+    env: [CGO_ENABLED=0]
+    hooks:
+      post: |
+        # Create Terraform-required directory structure
+        mkdir -p "{{ .ArtifactsDir }}/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
+        mv "{{ .ArtifactsDir }}/{{ .Binary }}" "{{ .ArtifactsDir }}/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/"
+
 archives:
   - format: zip
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-
-
+    name_template: "terraform-provider-cloudportal_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - "terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/{{ .Binary }}"
+      - LICENSE*
+      - README*
 
 checksum:
-  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
+  name_template: "terraform-provider-cloudportal_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
 
 signs:
   - artifacts: checksum
-    signature: "${artifact}.asc"
+    signature: "${artifact}.sig"  # Terraform requires .sig extension
     args:
       - "--batch"
       - "--yes"
       - "--pinentry-mode=loopback"
+      - "--passphrase=${GPG_PASSPHRASE}"
       - "--output=${signature}"
       - "--armor"
       - "--detach-sign"
       - "--local-user=${GPG_FINGERPRINT}"
-      - "--"
-      - "${artifact}"
     env:
       - GPG_FINGERPRINT
-      - GPG_KEY_ID  # This makes the variable available to GoReleaser
+      - GPG_PASSPHRASE
