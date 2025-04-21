@@ -2,7 +2,7 @@ version: 2
 builds:
   - id: "provider"
     binary: "terraform-provider-cloudportal"
-    goos: [darwin, linux, windows]  # Add all required OSes
+    goos: [darwin]  # Add all required OSes
     goarch: [amd64, arm64]
     ldflags: "-s -w -X main.version={{.Version}}"
     env: [CGO_ENABLED=0]
