@@ -1,33 +1,27 @@
 version: 2
 builds:
-  - id: "provider"
-    binary: "terraform-provider-cloudportal"  # Must follow this naming
-    env: ["CGO_ENABLED=0"]
-    goos: [darwin]
-    goarch: [amd64, arm64]
-    flags: [-trimpath]
-    ldflags: ["-s -w -X main.version={{.Version}}"]
-    hooks:
-      post: |
-        # Create Terraform-required structure
-        mkdir -p "{{ .ArtifactsDir }}/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
-        mv "{{ .ArtifactsDir }}/{{ .Binary }}" "{{ .ArtifactsDir }}/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/"
+  - id: "cloudportal"  # Added build ID for better reference
+    binary: "terraform-provider-cloudportal"  # Explicit binary name matching Terraform conventions
+    env: [ "CGO_ENABLED=0" ]
+    goos: [ linux, darwin, windows ]
+    goarch: [ amd64, arm64 ]
+    ldflags:
+      - "-s -w -X main.version={{.Version}}"
 
 archives:
-  - format: zip
-    name_template: "terraform-provider-cloudportal_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+  - formats: [tar.gz]  # Changed from 'formats' to singular 'format'
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
-      - "terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/{{ .Binary }}"
-      - LICENSE*
-      - README*
+      - LICENSE*  # Include license file
+      - README*   # Include documentation
 
 checksum:
-  name_template: "terraform-provider-cloudportal_{{ .Version }}_SHA256SUMS"
+  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
 
 signs:
   - artifacts: checksum
-    signature: "${artifact}.sig"
+    signature: "${artifact}.asc"
     args:
       - "--batch"
       - "--yes"
@@ -41,5 +35,3 @@ signs:
     env:
       - GPG_FINGERPRINT
       - GPG_KEY_ID  # This makes the variable available to GoReleaser
-
-
