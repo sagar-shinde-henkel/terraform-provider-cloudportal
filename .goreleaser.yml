@@ -9,8 +9,10 @@ builds:
     hooks:
       post: |
         # Create Terraform-required directory structure
-        mkdir -p "dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
-        mv "/home/runner/work/terraform-provider-cloudportal/terraform-provider-cloudportal/dist/provider_darwin_arm64_v8.0/terraform-provider-cloudportal" "dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/"
+        - mkdir -p dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}
+        - mv {{ .Path }} dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/
+
+
 archives:
   - format: zip
     name_template: "terraform-provider-cloudportal_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
