@@ -21,8 +21,7 @@ archives:
     wrap_in_directory: false
     files:
       - dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os "windows" }}.exe{{ end }}
-      - README.md
-      - LICENSE
+      - /home/runner/work/terraform-provider-cloudportal/terraform-provider-cloudportal/dist/provider_darwin_arm64_v8.0/terraform-provider-cloudportal
 
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
