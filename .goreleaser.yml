@@ -4,7 +4,7 @@ version: 1
 builds:
   - id: provider
     binary: terraform-provider-cloudportal
-    goos: [darwin, linux, windows]
+    goos: [darwin]
     goarch: [amd64, arm64]
     env: [CGO_ENABLED=0]
     ldflags: "-s -w -X main.version={{ .Version }}"
@@ -29,7 +29,7 @@ checksum:
 
 signs:
   - artifacts: checksum
-    signature: "${artifact}.sig"
+    signature: "${artifact}.sig"  # Binary signature
     args:
       - "--batch"
       - "--yes"
@@ -37,7 +37,7 @@ signs:
       - "--passphrase=${GPG_PASSPHRASE}"
       - "--output=${signature}"
       - "--detach-sign"
-      - "--armor"
+      # REMOVE "--armor" flag to generate binary signature
       - "--local-user=${GPG_FINGERPRINT}"
     env:
       - GPG_FINGERPRINT
