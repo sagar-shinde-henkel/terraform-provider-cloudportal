@@ -3,7 +3,7 @@ name: Release Terraform Provider
 on:
   push:
     tags:
-      - "v*.*.*" # Triggers on semantic version tags (e.g., v1.2.3)
+      - "v*.*.*"
 
 env:
   TF_REGISTRY_API_TOKEN: ${{ secrets.TF_REGISTRY_API_TOKEN }}
@@ -13,7 +13,7 @@ env:
 
 permissions:
   contents: write
-  id-token: write # Required for HashiCorp registry auth
+  id-token: write
 
 jobs:
   release:
@@ -24,7 +24,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Required for full Git history
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -46,16 +46,18 @@ jobs:
 
       - name: Verify GPG Setup
         run: |
-          echo "Imported Key Fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
           gpg --list-secret-keys --keyid-format LONG
           echo "Test signing verification:"
           echo "test" | gpg --clearsign --local-user "${{ steps.import_gpg.outputs.fingerprint }}"
+
+      - name: Clean dist directory
+        run: rm -rf dist || true
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
-          args: release --clean
+          args: release --clean --rm-dist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}

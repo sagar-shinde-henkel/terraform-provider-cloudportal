@@ -4,30 +4,25 @@ version: 1
 builds:
   - id: provider
     binary: terraform-provider-cloudportal
-    goos: [darwin, linux, windows]  # All supported OSes
-    goarch: [amd64, arm64]          # All supported architectures
+    goos: [darwin]
+    goarch: [amd64, arm64]
     env: [CGO_ENABLED=0]
     ldflags: "-s -w -X main.version={{ .Version }}"
     hooks:
       post:
-        - echo "Creating Terraform directory structure..."
-        - mkdir -p dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}
-        - echo "Moving binary to Terraform plugin path..."
-        - cp {{ .Path }} dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os "windows" }}.exe{{ end }}
+        - mkdir -p "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
+        - cp "{{ .Path }}" "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os \"windows\" }}.exe{{ end }}"
 
 archives:
   - format: zip
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    wrap_in_directory: false
     files:
-      - dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os "windows" }}.exe{{ end }}
-      - /home/runner/work/terraform-provider-cloudportal/terraform-provider-cloudportal/dist/provider_darwin_arm64_v8.0/terraform-provider-cloudportal
+      - "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os \"windows\" }}.exe{{ end }}"
+    wrap_in_directory: false
 
 checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
-  extra_files:
-    - glob: "*.zip"
 
 signs:
   - artifacts: checksum
@@ -44,11 +39,3 @@ signs:
     env:
       - GPG_FINGERPRINT
       - GPG_PASSPHRASE
-
-release:
-  github:
-    owner: your-github-org
-    name: terraform-provider-cloudportal
-  prerelease: false
-  extra_files:
-    - glob: "*.sig"
