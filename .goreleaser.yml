@@ -4,20 +4,23 @@ version: 1
 builds:
   - id: provider
     binary: terraform-provider-cloudportal
-    goos: [darwin]
+    goos: [darwin, linux, windows]
     goarch: [amd64, arm64]
     env: [CGO_ENABLED=0]
     ldflags: "-s -w -X main.version={{ .Version }}"
     hooks:
       post:
         - mkdir -p "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
-        - cp "{{ .Path }}" "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os \"windows\" }}.exe{{ end }}"
-
+        - mkdir -p dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}
+        - echo "Copying binary to Terraform-compliant path..."
+        -  cp "{{ .Path }}" "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal"
+          
+        
 archives:
   - format: zip
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
-      - "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os \"windows\" }}.exe{{ end }}"
+      - "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal*"
     wrap_in_directory: false
 
 checksum:
