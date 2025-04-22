@@ -13,7 +13,7 @@ builds:
         - echo "Creating Terraform directory structure..."
         - mkdir -p dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}
         - echo "Moving binary to Terraform plugin path..."
-        - mv {{ .Path }} dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os "windows" }}.exe{{ end }}
+        - cp {{ .Path }} dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os "windows" }}.exe{{ end }}
 
 archives:
   - format: zip
