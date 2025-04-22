@@ -4,28 +4,31 @@ version: 2
 builds:
   - id: provider
     binary: terraform-provider-cloudportal
-    goos: [darwin]  # Add more OSes like linux, windows if needed
-    goarch: [arm64]
+    goos: [darwin, linux, windows]  # All supported OSes
+    goarch: [amd64, arm64]          # All supported architectures
     env: [CGO_ENABLED=0]
     ldflags: "-s -w -X main.version={{ .Version }}"
     hooks:
       post:
-        - echo "Creating Terraform directory..."
+        - echo "Creating Terraform directory structure..."
         - mkdir -p dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}
-        - echo "Copying binary to Terraform-compliant path..."
-        - cp {{ .Path }} dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal
+        - echo "Moving binary to Terraform plugin path..."
+        - mv {{ .Path }} dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os "windows" }}.exe{{ end }}
 
 archives:
   - format: zip
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     wrap_in_directory: false
     files:
-      - dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal
+      - dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal{{ if eq .Os "windows" }}.exe{{ end }}
       - README.md
+      - LICENSE
 
 checksum:
-  name_template: "terraform-provider-cloudportal_{{ .Version }}_SHA256SUMS"
+  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
   algorithm: sha256
+  extra_files:
+    - glob: "*.zip"
 
 signs:
   - artifacts: checksum
@@ -37,7 +40,16 @@ signs:
       - "--passphrase=${GPG_PASSPHRASE}"
       - "--output=${signature}"
       - "--detach-sign"
+      - "--armor"
       - "--local-user=${GPG_FINGERPRINT}"
     env:
       - GPG_FINGERPRINT
       - GPG_PASSPHRASE
+
+release:
+  github:
+    owner: your-github-org
+    name: terraform-provider-cloudportal
+  prerelease: false
+  extra_files:
+    - glob: "*.sig"

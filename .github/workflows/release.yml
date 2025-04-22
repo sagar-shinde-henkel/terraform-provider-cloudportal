@@ -6,13 +6,10 @@ on:
       - "v*.*.*" # Triggers on semantic version tags (e.g., v1.2.3)
 
 env:
-  # Global environment variables
-  env:
   TF_REGISTRY_API_TOKEN: ${{ secrets.TF_REGISTRY_API_TOKEN }}
-  GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
   GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-  HASHICORP_API_TOKEN: ${{ secrets.TF_REGISTRY_API_TOKEN }}
-
+  PROVIDER_NAMESPACE: "sagar-shinde-henkel"
+  PROVIDER_NAME: "cloudportal"
 
 permissions:
   contents: write
@@ -22,8 +19,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     environment: release
-    env:
-      GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
 
     steps:
       - name: Checkout code
@@ -47,77 +42,33 @@ jobs:
         uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      # name: Setup GPG (Fixed Import)
-      # env:
-      #   GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-      #   GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
-      # run: |
-      #   # Install minimal GPG
-      #   sudo apt-get update && sudo apt-get install -y --no-install-recommends gnupg
-      #   # Create secure directory
-      #   mkdir -p ~/.gnupg
-      #   chmod 700 ~/.gnupg
-      #   # Write key to temporary file to avoid stdin issues
-      #   echo "$GPG_PRIVATE_KEY" > /tmp/gpg_private.key
-      #   gpg --batch --import /tmp/gpg_private.key
-      #   rm -f /tmp/gpg_private.key
-      #   # Configure non-interactive environment
-      #   cat <<EOF > ~/.gnupg/gpg.conf
-      #   pinentry-mode loopback
-      #   use-agent
-      #   EOF
-      #   cat <<EOF > ~/.gnupg/gpg-agent.conf
-      #   allow-loopback-pinentry
-      #   disable-scdaemon
-      #   EOF
-      #   # Set ultimate trust
-      #   echo "${GPG_KEY_ID}:6:" | gpg --import-ownertrust
-      #   # Verify setup
-      #   echo "=== IMPORT VERIFICATION ==="
-      #   gpg --list-secret-keys --keyid-format LONG
-      #   echo "=== TEST SIGNING ==="
-      #   echo "test123" | gpg --clearsign --batch --yes --pinentry-mode loopback --local-user "$GPG_KEY_ID"
-
-      #- name: Run GoReleaser
-      # uses: goreleaser/goreleaser-action@v4
-      # with:
-      #   args: release
-      # env:
-      #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Verify Environment
-        env:
-          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }} # Explicitly set the env var for this step
+      - name: Verify GPG Setup
         run: |
-          echo "Using GPG Key ID: ${GPG_KEY_ID}"
-          gpg --list-secret-keys "${GPG_KEY_ID}" || echo "Key listing failed"
-          echo "Test signing:"
-          echo "test" | gpg --clearsign --batch --yes --local-user "${GPG_KEY_ID}" || echo "Test signing failed"
-
-      - name: Debug GPG
-        run: |
-          echo "Fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
-          gpg --list-secret-keys --with-colons
+          echo "Imported Key Fingerprint: ${{ steps.import_gpg.outputs.fingerprint }}"
+          gpg --list-secret-keys --keyid-format LONG
+          echo "Test signing verification:"
+          echo "test" | gpg --clearsign --local-user "${{ steps.import_gpg.outputs.fingerprint }}"
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
           args: release --clean
         env:
-          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}  # Critical
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }} # Pass the key ID to GoReleaser
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Publish to Terraform Registry
         if: success()
-        env:
-          TF_REGISTRY_API_TOKEN: ${{ secrets.TF_REGISTRY_API_TOKEN }}
-          GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          curl -v -X POST \
+          echo "Publishing v$VERSION to Terraform Registry"
+          
+          # Create provider version
+          curl -X POST \
             -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
             -d '{
@@ -125,8 +76,20 @@ jobs:
                 "type": "registry-provider-versions",
                 "attributes": {
                   "version": "'"$VERSION"'",
-                  "key-id": "'"$GPG_FINGERPRINT"'"
+                  "key-id": "'"${{ steps.import_gpg.outputs.fingerprint }}"'"
                 }
               }
             }' \
-            "https://registry.terraform.io/v2/providers/sagar-shinde-henkel/cloudportal/versions"
+            "https://registry.terraform.io/v2/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME/versions"
+
+          # Upload all provider binaries
+          for file in dist/*.zip; do
+            PLATFORM=$(basename $file | cut -d_ -f3- | sed 's/.zip$//')
+            echo "Uploading $PLATFORM binary..."
+            
+            curl -X POST \
+              -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary @"$file" \
+              "https://registry.terraform.io/v2/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME/versions/$VERSION/platforms/$PLATFORM"
+          done
