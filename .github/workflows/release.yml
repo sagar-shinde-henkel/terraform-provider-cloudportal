@@ -66,7 +66,7 @@ jobs:
       - name: Verify Release Assets
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          cd dist
+          cd dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}
           
           # Verify SHA256SUMS signature
           gpg --verify ${PROVIDER_NAME}_${VERSION}_SHA256SUMS.sig ${PROVIDER_NAME}_${VERSION}_SHA256SUMS
