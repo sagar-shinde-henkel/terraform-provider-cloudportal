@@ -50,6 +50,17 @@ jobs:
           echo "Test signing verification:"
           echo "test" | gpg --clearsign --local-user "${{ steps.import_gpg.outputs.fingerprint }}"
 
+      - name: Verify Release Assets
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          cd dist
+          
+          # Verify SHA256SUMS signature
+          gpg --verify ${PROVIDER_NAME}_${VERSION}_SHA256SUMS.sig ${PROVIDER_NAME}_${VERSION}_SHA256SUMS
+          
+          # Verify checksums match binaries
+          sha256sum -c ${PROVIDER_NAME}_${VERSION}_SHA256SUMS
+
       - name: Clean dist directory
         run: rm -rf dist || true
 
@@ -82,7 +93,7 @@ jobs:
                 }
               }
             }' \
-            "https://registry.terraform.io/v2/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME/versions"
+            "https://registry.terraform.io/v2/providers/sagar-shinde-henkel/cloudportal/versions"
 
           # Upload all provider binaries
           for file in dist/*.zip; do
