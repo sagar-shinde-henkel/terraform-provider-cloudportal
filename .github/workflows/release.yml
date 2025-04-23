@@ -63,17 +63,6 @@ jobs:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Verify Release Assets
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          cd "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
-          
-          # Verify SHA256SUMS signature
-          gpg --verify ${PROVIDER_NAME}_${VERSION}_SHA256SUMS.sig ${PROVIDER_NAME}_${VERSION}_SHA256SUMS
-          
-          # Verify checksums match binaries
-          sha256sum -c ${PROVIDER_NAME}_${VERSION}_SHA256SUMS
-
       - name: Publish to Terraform Registry
         if: success()
         run: |

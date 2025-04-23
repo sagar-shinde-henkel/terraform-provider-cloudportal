@@ -11,10 +11,11 @@ builds:
     hooks:
       post:
         - mkdir -p "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
-        - mkdir -p dist/terraform-provider-cloudportal_{{ .Version }}/{{ .Os }}_{{ .Arch }}
         - echo "Copying binary to Terraform-compliant path..."
-        -  cp "{{ .Path }}" "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal"
-          
+        - cp "{{ .Path }}" "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal"
+        - cd "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
+        - gpg --verify ${PROVIDER_NAME}_${VERSION}_SHA256SUMS.sig ${PROVIDER_NAME}_${VERSION}_SHA256SUMS
+        - sha256sum -c ${PROVIDER_NAME}_${VERSION}_SHA256SUMS 
         
 archives:
   - format: zip
