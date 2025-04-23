@@ -50,17 +50,6 @@ jobs:
           echo "Test signing verification:"
           echo "test" | gpg --clearsign --local-user "${{ steps.import_gpg.outputs.fingerprint }}"
 
-      - name: Verify Release Assets
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          cd dist
-          
-          # Verify SHA256SUMS signature
-          gpg --verify ${PROVIDER_NAME}_${VERSION}_SHA256SUMS.sig ${PROVIDER_NAME}_${VERSION}_SHA256SUMS
-          
-          # Verify checksums match binaries
-          sha256sum -c ${PROVIDER_NAME}_${VERSION}_SHA256SUMS
-
       - name: Clean dist directory
         run: rm -rf dist || true
 
@@ -73,6 +62,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Verify Release Assets
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          cd dist
+          
+          # Verify SHA256SUMS signature
+          gpg --verify ${PROVIDER_NAME}_${VERSION}_SHA256SUMS.sig ${PROVIDER_NAME}_${VERSION}_SHA256SUMS
+          
+          # Verify checksums match binaries
+          sha256sum -c ${PROVIDER_NAME}_${VERSION}_SHA256SUMS
 
       - name: Publish to Terraform Registry
         if: success()
