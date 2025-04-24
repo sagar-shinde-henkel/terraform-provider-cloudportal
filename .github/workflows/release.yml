@@ -94,4 +94,4 @@ jobs:
               -H "Content-Type: application/octet-stream" \
               --data-binary @"$file" \
               "https://registry.terraform.io/v2/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME/versions/$VERSION/platforms/$PLATFORM"
-          done
+          done 
