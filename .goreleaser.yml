@@ -12,8 +12,6 @@ builds:
       post:
         - mkdir -p "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
         - echo "Copying binary to Terraform-compliant path..."
-        - cp "{{ .Path }}" "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}/terraform-provider-cloudportal"
-        - cd "dist/{{ .ProjectName }}_{{ .Version }}/{{ .Os }}_{{ .Arch }}"
         
 archives:
   - format: zip
