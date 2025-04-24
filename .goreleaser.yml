@@ -29,12 +29,7 @@ signs:
     signature: "${artifact}.sig"  # Binary signature
     args:
       - "--batch"
-      - "--yes"
-      - "--pinentry-mode=loopback"
-      - "--passphrase=${GPG_PASSPHRASE}"
-      - "--output=${signature}"
       - "--detach-sign"
-      # REMOVE "--armor" flag to generate binary signature
       - "--local-user=${GPG_FINGERPRINT}"
     env:
       - GPG_FINGERPRINT
