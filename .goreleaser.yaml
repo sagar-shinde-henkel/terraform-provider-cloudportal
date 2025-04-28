@@ -42,10 +42,12 @@ checksum:
 
 signs:
   - artifacts: checksum
-    signature: "${artifact}.sig"  # Binary signature
+    signature: "${artifact}.sig"
     args:
       - "--batch"
+      - "--yes"
       - "--detach-sign"
+      - "--output=${signature}"
       - "--local-user=${GPG_FINGERPRINT}"
     env:
       - GPG_FINGERPRINT
