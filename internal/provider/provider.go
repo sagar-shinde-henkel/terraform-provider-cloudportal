@@ -55,9 +55,9 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	// Define your Azure credentials
-	clientID := d.Get("clientID").(string)
-	clientSecret := d.Get("clientSecret").(string)
-	tenantID := d.Get("tenantID").(string)
+	clientID := d.Get("clientid").(string)
+	clientSecret := d.Get("clientsecret").(string)
+	tenantID := d.Get("tenantid").(string)
 
 	// Use azidentity to authenticate using client credentials
 	client, err := azidentity.NewClientSecretCredential(tenantID, clientID, clientSecret, nil)
@@ -89,17 +89,17 @@ func Provider() *schema.Provider {
 				Required:    true,
 				Description: "Debug infor mation logging",
 			},
-			"clientID": {
+			"clientid": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "clientID key for authenticating with the custom API",
 			},
-			"clientSecret": {
+			"clientsecret": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "clientSecret key for authenticating with the custom API",
 			},
-			"tenantID": {
+			"tenantid": {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "tenantID key for authenticating with the custom API",
