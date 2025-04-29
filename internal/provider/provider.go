@@ -60,7 +60,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	clientID := d.Get("clientid").(string)
 	clientSecret := d.Get("clientsecret").(string)
 	tenantID := d.Get("tenantid").(string)
-	cp_clientID := d.Get("tenantid").(string)
+	cp_clientID := d.Get("cp_clientid").(string)
 
 	// Use azidentity to authenticate using client credentials
 	client, err := azidentity.NewClientSecretCredential(tenantID, clientID, clientSecret, nil)
@@ -106,6 +106,11 @@ func Provider() *schema.Provider {
 				Type:        schema.TypeString,
 				Required:    true,
 				Description: "tenantID key for authenticating with the custom API",
+			},
+			"cp_clientid": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "cloud portal client id  key for authenticating with the custom API",
 			},
 		},
 		// Configure the provider with API credentials
