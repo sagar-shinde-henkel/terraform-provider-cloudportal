@@ -14,23 +14,25 @@ import (
 
 // CloudportalAPIClient represents a custom API client that communicates with the API
 type CloudportalAPIClient struct {
-	BaseURL   string
-	APIKey    string
-	Client    *http.Client
-	aziclient *azidentity.ClientSecretCredential
-	isdebug   bool
-	tenantID  string
+	BaseURL     string
+	APIKey      string
+	Client      *http.Client
+	aziclient   *azidentity.ClientSecretCredential
+	isdebug     bool
+	tenantID    string
+	cp_clientID string
 }
 
 // NewCloudportalAPIClient initializes a new API client
-func NewCloudportalAPIClient(azidentity *azidentity.ClientSecretCredential, apiKey, baseURL string, tenID string, debuginfo bool) *CloudportalAPIClient {
+func NewCloudportalAPIClient(azidentity *azidentity.ClientSecretCredential, apiKey, baseURL string, tenID string, cpID string, debuginfo bool) *CloudportalAPIClient {
 	return &CloudportalAPIClient{
-		BaseURL:   baseURL,
-		APIKey:    apiKey,
-		Client:    &http.Client{},
-		aziclient: azidentity,
-		isdebug:   debuginfo,
-		tenantID:  tenID,
+		BaseURL:     baseURL,
+		APIKey:      apiKey,
+		Client:      &http.Client{},
+		aziclient:   azidentity,
+		isdebug:     debuginfo,
+		tenantID:    tenID,
+		cp_clientID: cpID,
 	}
 }
 
@@ -58,6 +60,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	clientID := d.Get("clientid").(string)
 	clientSecret := d.Get("clientsecret").(string)
 	tenantID := d.Get("tenantid").(string)
+	cp_clientID := d.Get("tenantid").(string)
 
 	// Use azidentity to authenticate using client credentials
 	client, err := azidentity.NewClientSecretCredential(tenantID, clientID, clientSecret, nil)
@@ -65,7 +68,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		logger.Error(err.Error())
 	}
 
-	apiclient := NewCloudportalAPIClient(client, apiKey, baseURL, tenantID, debugInfo)
+	apiclient := NewCloudportalAPIClient(client, apiKey, baseURL, tenantID, cp_clientID, debugInfo)
 
 	return apiclient, nil
 }

@@ -199,7 +199,7 @@ func dataSourceTicketRead(d *schema.ResourceData, meta interface{}) error {
 	// Step 2: Prepare token request options
 
 	tokenRequestOptions := policy.TokenRequestOptions{
-		Scopes: []string{cred.tenantID + "/.default"}, // Use the required scope for Azure management API Global.Appl.GoogleCloudPlatform.X
+		Scopes: []string{cred.cp_clientID + "/.default"}, // Use the required scope for Azure management API Global.Appl.GoogleCloudPlatform.X
 	}
 
 	// Step 3: Get the access token
