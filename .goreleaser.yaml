@@ -37,4 +37,5 @@ changelog:
   use: github-native
 
 release:
-  draft: true
+  draft: false        # <- Ensure it's not a draft
+  prerelease: false   # <- Set to false unless it's a beta/rc version

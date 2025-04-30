@@ -17,8 +17,6 @@ permissions:
 
 jobs:
   release:
-    draft: false         # Important: must not be a draft
-    prerelease: false
     runs-on: ubuntu-latest
     environment: release
 
@@ -71,41 +69,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-
-      - name: Verify Artifacts
-        run: |
-          echo "Generated artifacts:"
-          ls -la dist/
-          echo "Checksum file contents:"
-          cat dist/*SHA256SUMS || true
-
-      - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/terraform-provider-${{ env.PROVIDER_NAME }}_*_${{ matrix.os }}_${{ matrix.arch }}.zip
-            dist/terraform-provider-${{ env.PROVIDER_NAME }}_*_${{ matrix.os }}_${{ matrix.arch }}.zip.sig
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish to Terraform Registry
-        if: success()
-        run: |
-          set -e
-          VERSION=${GITHUB_REF#refs/tags/v}
-
-          # Create version
-          echo "Creating version $VERSION..."
-          curl -f -X POST \
-            -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
-            -H "Content-Type: application/vnd.api+json" \
-            -d '{
-              "data": {
-                "type": "registry-provider-versions",
-                "attributes": {
-                  "version": "'"$VERSION"'",
-                  "key-id": "'"${{ steps.import_gpg.outputs.fingerprint }}"'"
-                }
-              }
-            }' \
-            "https://registry.terraform.io/v1/providers/sagar-shinde-henkel/cloudportal/versions"
