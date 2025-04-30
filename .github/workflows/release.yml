@@ -21,6 +21,13 @@ jobs:
     environment: release
 
     steps:
+      - name: Validate Tag Format
+        run: |
+          if [[ ! $GITHUB_REF =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Tag must follow semantic versioning (vX.Y.Z)"
+            exit 1
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -35,7 +42,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y gpg
+          sudo apt-get install -y gpg jq
 
       - name: Import GPG Key
         id: import_gpg
@@ -63,14 +70,22 @@ jobs:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
+      - name: Verify Artifacts
+        run: |
+          echo "Generated artifacts:"
+          ls -la dist/
+          echo "Checksum file contents:"
+          cat dist/*SHA256SUMS || true
+
       - name: Publish to Terraform Registry
         if: success()
         run: |
+          set -e
           VERSION=${GITHUB_REF#refs/tags/v}
-          echo "Publishing v$VERSION to Terraform Registry"
           
           # Create provider version
-          curl -X POST \
+          echo "Creating version $VERSION..."
+          curl -f -X POST \
             -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
             -H "Content-Type: application/vnd.api+json" \
             -d '{
@@ -84,14 +99,19 @@ jobs:
             }' \
             "https://registry.terraform.io/v2/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME/versions"
 
-          # Upload all provider binaries
+          # Upload binaries
           for file in dist/*.zip; do
-            PLATFORM=$(basename $file | cut -d_ -f3- | sed 's/.zip$//')
-            echo "Uploading $PLATFORM binary..."
+            PLATFORM=$(basename "$file" | awk -F_ '{print $(NF-1)"_"$NF}' | sed 's/.zip$//')
+            echo "Uploading $file for $PLATFORM..."
             
-            curl -X POST \
+            curl -f -X POST \
               -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
               -H "Content-Type: application/octet-stream" \
               --data-binary @"$file" \
               "https://registry.terraform.io/v2/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME/versions/$VERSION/platforms/$PLATFORM"
-          done 
+          done
+
+      - name: Notify Success
+        if: success()
+        run: |
+          echo "Provider v${GITHUB_REF#refs/tags/v} published successfully!"
