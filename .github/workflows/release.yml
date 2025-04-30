@@ -17,6 +17,8 @@ permissions:
 
 jobs:
   release:
+    draft: false         # Important: must not be a draft
+    prerelease: false
     runs-on: ubuntu-latest
     environment: release
 
