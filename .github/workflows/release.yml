@@ -82,15 +82,6 @@ jobs:
         run: |
           set -e
           VERSION=${GITHUB_REF#refs/tags/v}
-          
-          # Verify provider exists first
-          echo "Checking provider registration..."
-          curl -f -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
-            "https://registry.terraform.io/v1/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME" || {
-              echo "Error: Provider not found. Register it first at:"
-              echo "https://registry.terraform.io/publish/provider"
-              exit 1
-            }
 
           # Create version
           echo "Creating version $VERSION..."
@@ -106,7 +97,7 @@ jobs:
                 }
               }
             }' \
-            "https://registry.terraform.io/v1/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME/versions"
+            "https://registry.terraform.io/v1/providers/sagar-shinde-henkel/cloudportal/versions"
 
           # Upload binaries
           for file in dist/*.zip; do
@@ -117,5 +108,5 @@ jobs:
               -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
               -H "Content-Type: application/octet-stream" \
               --data-binary @"$file" \
-              "https://registry.terraform.io/v1/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME/versions/$VERSION/platforms/$PLATFORM"
+              "https://registry.terraform.io/v1/providers/sagar-shinde-henkel/cloudportal/versions/$VERSION/platforms/$PLATFORM"
           done
