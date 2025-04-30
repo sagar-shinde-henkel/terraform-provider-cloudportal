@@ -83,7 +83,16 @@ jobs:
           set -e
           VERSION=${GITHUB_REF#refs/tags/v}
           
-          # Create provider version
+          # Verify provider exists first
+          echo "Checking provider registration..."
+          curl -f -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
+            "https://registry.terraform.io/v2/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME" || {
+              echo "Error: Provider not found. Register it first at:"
+              echo "https://registry.terraform.io/publish/provider"
+              exit 1
+            }
+
+          # Create version
           echo "Creating version $VERSION..."
           curl -f -X POST \
             -H "Authorization: Bearer $TF_REGISTRY_API_TOKEN" \
@@ -110,8 +119,3 @@ jobs:
               --data-binary @"$file" \
               "https://registry.terraform.io/v2/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME/versions/$VERSION/platforms/$PLATFORM"
           done
-
-      - name: Notify Success
-        if: success()
-        run: |
-          echo "Provider v${GITHUB_REF#refs/tags/v} published successfully!"
