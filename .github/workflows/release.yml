@@ -82,7 +82,7 @@ jobs:
                 }
               }
             }' \
-            "https://registry.terraform.io/v2/providers/sagar-shinde-henkel/cloudportal/versions"
+            "https://registry.terraform.io/v2/providers/$PROVIDER_NAMESPACE/$PROVIDER_NAME/versions"
 
           # Upload all provider binaries
           for file in dist/*.zip; do
