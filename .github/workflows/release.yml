@@ -44,7 +44,7 @@ jobs:
 
       - name: Generate Terraform documentation
         run: tfplugindocs
-        
+
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -75,3 +75,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GORELEASER_SKIP_VALIDATE: true
+          GORELEASER_SKIP_GIT_DIRTY: true

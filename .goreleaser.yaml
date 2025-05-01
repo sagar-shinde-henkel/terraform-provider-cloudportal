@@ -5,9 +5,6 @@ before:
     - go mod tidy
     - tfplugindocs
 
-git:
-  dirty: ignore
-
 builds:
   - env:
       - CGO_ENABLED=0
@@ -47,3 +44,6 @@ changelog:
 release:
   draft: false        # <- Ensure it's not a draft
   prerelease: false   # <- Set to false unless it's a beta/rc version
+
+skip:
+  git_dirty: true
