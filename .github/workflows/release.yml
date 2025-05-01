@@ -39,6 +39,12 @@ jobs:
           go-version-file: "go.mod"
           cache: true
 
+      - name: Install tfplugindocs
+        run: go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest
+
+      - name: Generate Terraform documentation
+        run: tfplugindocs
+        
       - name: Install dependencies
         run: |
           sudo apt-get update
