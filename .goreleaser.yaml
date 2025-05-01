@@ -5,6 +5,9 @@ before:
     - go mod tidy
     - tfplugindocs
 
+git:
+  dirty: ignore
+
 builds:
   - env:
       - CGO_ENABLED=0
