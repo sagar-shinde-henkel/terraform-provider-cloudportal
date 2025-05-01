@@ -44,6 +44,3 @@ changelog:
 release:
   draft: false        # <- Ensure it's not a draft
   prerelease: false   # <- Set to false unless it's a beta/rc version
-
-skip:
-  git_dirty: true
