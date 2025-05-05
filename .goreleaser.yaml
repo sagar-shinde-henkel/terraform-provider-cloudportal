@@ -1,9 +1,9 @@
 version: 1
 
-before:
-  hooks:
-    - go mod tidy
-    - tfplugindocs
+#before:
+ # hooks:
+  #  - go mod tidy
+  #  - tfplugindocs
 
 builds:
   - env:

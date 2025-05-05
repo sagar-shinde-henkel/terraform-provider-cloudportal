@@ -42,8 +42,8 @@ jobs:
       - name: Install tfplugindocs
         run: go install github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@latest
 
-      - name: Generate Terraform documentation
-        run: tfplugindocs
+      #- name: Generate Terraform documentation
+       # run: tfplugindocs
 
       - name: Install dependencies
         run: |
@@ -75,5 +75,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          GORELEASER_SKIP_VALIDATE: true
-          GORELEASER_SKIP_GIT_DIRTY: true
