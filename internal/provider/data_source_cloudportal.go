@@ -44,49 +44,53 @@ type Ticket struct {
 }
 
 type TicketInventory struct {
-	TicketloudCosts                     float64 `json:"ticket_loud_costs"`
-	TicketOneTimeCostsUtilized          float64 `json:"ticket_one_time_costs_utilized"`
-	TicketOneTimeCostsUtilizedThisMonth float64 `json:"ticket_one_time_costs_utilized_this_month"`
-	TicketOneTimeCost                   float64 `json:"ticket_one_time_cost"`
-	TicketClarityCodeOTCCode            string  `json:"ticket_clarity_code_otc_code"`
-	TicketClarityCodeCostCenter         string  `json:"ticket_clarity_code_cost_center"`
-	TicketClarityCodeCode               string  `json:"ticket_clarity_code_code"`
-	TicketClarityCodeOTCCostCenter      string  `json:"ticket_clarity_code_otc_cost_center"`
-	TicketCostCenter                    string  `json:"ticket_cost_center"`
-	TicketCostCenterOTC                 string  `json:"ticket_cost_center_otc"`
-	TicketChangedAt                     string  `json:"ticket_changed_at"`
-	TicketChangedBy                     string  `json:"ticket_changed_by"`
-	TicketServiceProviderValue          string  `json:"ticket_service_provider_value"`
-	TicketRequester                     string  `json:"ticket_requester"`
-	TicketServiceProvider               string  `json:"ticket_service_provider"`
-	TicketCloudPlatform                 string  `json:"ticket_cloud_platform"`
-	TicketArchitect                     string  `json:"ticket_architect"`
-	TicketNo                            int     `json:"ticket_no"`
-	TicketTitle                         string  `json:"ticket_title"`
-	TicketAppOwner                      string  `json:"ticket_app_owner"`
-	TicketAppName                       string  `json:"ticket_app_name"`
-	TicketAppID                         string  `json:"ticket_app_id"`
-	TicketApplicationManager            string  `json:"ticket_application_manager"`
-	TicketCyberRiskCategory             string  `json:"ticket_cyber_risk_category"`
-	ResourceID                          string  `json:"resource_id"`
-	ResourceStatus                      string  `json:"resource_status"`
-	ResourceUpdated                     string  `json:"resource_updated"`
-	TicketRelatedUnit                   string  `json:"ticket_related_unit"`
-	TicketResponsibleGroupEmail         string  `json:"ticket_responsible_group_email"`
-	TicketCloudCosts                    float64 `json:"ticket_cloud_costs"`
-	ResourceAppID                       string  `json:"resource_app_id"`
-	ResourceAppName                     string  `json:"resource_app_name"`
-	ResourceAppOwner                    string  `json:"resource_app_owner"`
-	ResourceRelatedUnit                 string  `json:"resource_related_unit"`
-	ResourceName                        string  `json:"resource_name"`
-	ResourceType                        string  `json:"resource_type"`
-	ResourceContainer                   string  `json:"resource_container"`
-	SnowGroup                           string  `json:"snow_group"`
-	CloudTemplateMaster                 string  `json:"cloud_template_master"`
-	TicketStatus                        string  `json:"ticket_status"`
-	CataLogresourceID                   string  `json:"catalog_resource_id"`
-	ResourceContractName                string  `json:"resource_contract_name"`
-	CatalogApplicationSource            string  `json:"catalog_application_source"`
+	TicketloudCosts                     float64 `json:"ticketloudCosts"`
+	TicketOneTimeCostsUtilized          float64 `json:"ticketOneTimeCostsUtilized"`
+	TicketOneTimeCostsUtilizedThisMonth float64 `json:"ticketOneTimeCostsUtilizedThisMonth"`
+	TicketOneTimeCost                   float64 `json:"ticketOneTimeCost"`
+	TicketClarityCodeOTCCode            string  `json:"ticketClarityCodeOTCCode"`
+	TicketClarityCodeCostCenter         string  `json:"ticketClarityCodeCostCenter"`
+	TicketClarityCodeCode               string  `json:"ticketClarityCodeCode"`
+	TicketClarityCodeOTCCostCenter      string  `json:"ticketClarityCodeOTCCostCenter"`
+	TicketCostCenter                    string  `json:"ticketCostCenter"`
+	TicketCostCenterOTC                 string  `json:"ticketCostCenterOTC"`
+	TicketChangedAt                     string  `json:"ticketChangedAt"`
+	TicketChangedBy                     string  `json:"ticketChangedBy"`
+	TicketServiceProviderValue          string  `json:"ticketServiceProviderValue"`
+	TicketRequester                     string  `json:"ticketRequester"`
+	TicketServiceProvider               string  `json:"ticketServiceProvider"`
+	TicketCloudPlatform                 string  `json:"ticketCloudPlatform"`
+	TicketArchitect                     string  `json:"ticketArchitect"`
+	TicketNo                            int     `json:"ticketNo"`
+	TicketTitle                         string  `json:"ticketTitle"`
+	TicketAppOwner                      string  `json:"ticketAppOwner"`
+	TicketAppName                       string  `json:"ticketAppName"`
+	TicketAppID                         string  `json:"ticketAppID"`
+	TicketApplicationManager            string  `json:"ticketApplicationManager"`
+	TicketCyberRiskCategory             string  `json:"ticketCyberRiskCategory"`
+	ResourceID                          string  `json:"resourceID"`
+	ResourceStatus                      string  `json:"resourceStatus"`
+	ResourceUpdated                     string  `json:"resourceUpdated"`
+	TicketRelatedUnit                   string  `json:"ticketRelatedUnit"`
+	TicketResponsibleGroupEmail         string  `json:"ticketResponsibleGroupEmail"`
+	TicketCloudCosts                    float64 `json:"ticketCloudCosts"`
+	ResourceAppID                       string  `json:"resourceAppID"`
+	ResourceAppName                     string  `json:"resourceAppName"`
+	ResourceAppOwner                    string  `json:"resourceAppOwner"`
+	ResourceRelatedUnit                 string  `json:"resourceRelatedUnit"`
+	ResourceName                        string  `json:"resourceName"`
+	ResourceType                        string  `json:"resourceType"`
+	ResourceContainer                   string  `json:"resourceContainer"`
+	SnowGroup                           string  `json:"snowGroup"`
+	CloudTemplateMaster                 string  `json:"cloudTemplateMaster"`
+	TicketStatus                        string  `json:"ticketStatus"`
+	CataLogresourceID                   string  `json:"cataLogresourceId"`
+	ResourceContractName                string  `json:"resourceContractName"`
+	CatalogApplicationSource            string  `json:"catalogApplicationSource"`
+}
+
+type InventoryResponse struct {
+	InventoryTickets []TicketInventory `json:"inventoryTickets"`
 }
 
 type User struct {
@@ -213,8 +217,17 @@ func dataSourceTicket() *schema.Resource {
 
 func dataSourceTicketInventory() *schema.Resource {
 	return &schema.Resource{
-		Read:   dataSourceTicketInventroyRead,
-		Schema: ticketinventory(), // Reuse the Ticket schema defined earlier
+		Read: dataSourceTicketInventroyRead,
+		//Schema: ticketinventory(), // Reuse the Ticket schema defined earlier
+		Schema: map[string]*schema.Schema{
+			"inventory": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: ticketinventory(), // <-- Use function here
+				},
+			},
+		},
 	}
 }
 
@@ -310,17 +323,22 @@ func dataSourceTicketInventroyRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	// Print the raw response for debugging (you can remove this in production)
-	//logger.Debug(string(bodyBytes))
+	logger.Debug(string(bodyBytes))
 
 	// If the response is JSON, we can unmarshal it into a Go struct
-	var ticketInvent []TicketInventory //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
+	var ticketInvent InventoryResponse //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
 	err = json.Unmarshal(bodyBytes, &ticketInvent)
 	if err != nil {
 		logger.Error(err.Error())
 	}
 
+	/*for _, ticket := range ticketInvent.InventoryTickets {
+		logger.Debug(fmt.Sprintf("Ticket : %d", ticket.TicketNo))
+	}*/
+
 	// Now pass to the flattening function
-	flattened := flattenInventoryTickets(ticketInvent)
+	flattened := flattenInventoryTickets(ticketInvent.InventoryTickets)
+	logger.Debug(fmt.Sprintf("InventoryTickets: %+v", flattened))
 
 	// Set the ID (required for Terraform state tracking)
 	d.SetId("000000000001") // or dynamic, e.g., hash, timestamp, etc.
