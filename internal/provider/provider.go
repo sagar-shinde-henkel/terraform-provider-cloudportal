@@ -126,7 +126,8 @@ func Provider() *schema.Provider {
 			"cloudportal_resource": ResourceCustom(),
 		},*/
 		DataSourcesMap: map[string]*schema.Resource{
-			"cloudportal_datasource": dataSourceTicket(), // Add data source here
+			"cloudportal_datasource":                  dataSourceTicket(),          // Add data source here
+			"cloudportal_datasource_ticket_inventory": dataSourceTicketInventory(), // Add data source here
 		},
 	}
 }
