@@ -205,6 +205,13 @@ type ClarityCode struct {
 	Tower       string   `json:"tower"`       // Tower associated with the clarity code
 }
 
+type ViewSearchResult struct {
+	TicketNo    int    `json:"ticketno"`    // Ticket number.
+	Title       string `json:"title"`       // Ticket title.
+	Description string `json:"description"` // Ticket description.
+	Requester   []User `json:"requester"`   // Ticket Requester
+}
+
 func dataSourceTicket() *schema.Resource {
 	return &schema.Resource{
 		Read:   dataSourceTicketRead,
@@ -224,10 +231,26 @@ func dataSourceTicketInventory() *schema.Resource {
 				Type:     schema.TypeList,
 				Computed: true,
 				Elem: &schema.Resource{
-					Schema: ticketinventory(), // <-- Use function here
+					Schema: ticketinventoryschema(), // <-- Use function here
 				},
 			},
 		},
+	}
+}
+
+func dataSourceTicketSearch() *schema.Resource {
+	return &schema.Resource{
+		Read:   dataSourceTicketSearchRead,
+		Schema: viewsearchresultschema(), // Reuse the Ticket schema defined earlier
+		/*Schema: map[string]*schema.Schema{
+			"searchresult": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: viewsearchresultschema(), // <-- Use function here
+				},
+			},
+		},*/
 	}
 }
 
@@ -235,7 +258,7 @@ func dataSourceTicketInventory() *schema.Resource {
 func dataSourceTicketInventroyRead(d *schema.ResourceData, meta interface{}) error {
 	cred := meta.(*CloudportalAPIClient)
 
-	if cred.isdebug {
+	/*if cred.isdebug {
 		// Create a new logger with debug enabled
 		// Initialize the logger once, using debugEnabled=true
 		_, err := logger.NewLogger(true)
@@ -243,7 +266,7 @@ func dataSourceTicketInventroyRead(d *schema.ResourceData, meta interface{}) err
 			log.Fatal("Error initializing logger:", err)
 		}
 		defer logger.Close()
-	}
+	}*/
 
 	//ticketurl := "https://demand-module-dev.azurewebsites.net/api"
 	// Example: API call to fetch the ticket details by ID
@@ -323,7 +346,7 @@ func dataSourceTicketInventroyRead(d *schema.ResourceData, meta interface{}) err
 	}
 
 	// Print the raw response for debugging (you can remove this in production)
-	logger.Debug(string(bodyBytes))
+	//logger.Debug(string(bodyBytes))
 
 	// If the response is JSON, we can unmarshal it into a Go struct
 	var ticketInvent InventoryResponse //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
@@ -351,11 +374,120 @@ func dataSourceTicketInventroyRead(d *schema.ResourceData, meta interface{}) err
 	return nil
 }
 
+func dataSourceTicketSearchRead(d *schema.ResourceData, meta interface{}) error {
+	cred := meta.(*CloudportalAPIClient)
+
+	//Read required values
+	// Construct the URL for fetching the ticket details
+	key := d.Get("keyword").(string)
+	keyword := fmt.Sprintf("keyword=%s", key)
+
+	url := fmt.Sprintf("%s/ticket/search?%s", cred.BaseURL, keyword)
+
+	logger.Debug(url)
+
+	// Create a new request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		logger.Error(err.Error())
+		return fmt.Errorf("failed to create HTTP request: %s", err)
+	}
+
+	// Step 2: Prepare token request options
+
+	tokenRequestOptions := policy.TokenRequestOptions{
+		Scopes: []string{cred.cp_clientID + "/.default"}, // Use the required scope for Azure management API Global.Appl.GoogleCloudPlatform.X
+	}
+
+	// Step 3: Get the access token
+	token, err := cred.aziclient.GetToken(context.Background(), tokenRequestOptions)
+	if err != nil {
+		logger.Error(err.Error())
+		log.Fatalf("failed to obtain a token: %v", err)
+	}
+	logger.Debug("Token : " + token.Token)
+	// Set custom headers
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	req.Header.Set("Accept-Language", "en-IN,en-GB;q=0.9,en;q=0.8,en-US;q=0.7")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Add("Authorization", "Bearer "+token.Token)
+
+	// Set the API key in the Authorization header (replace with your actual method of authentication)
+	//req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", client.APIKey))
+
+	// Create a new HTTP client
+	//client := &http.Client{}
+
+	// Send the request using the HTTP client
+	resp, err := cred.Client.Do(req)
+	if err != nil {
+		logger.Error("Send request : " + err.Error())
+		return err
+	}
+	defer resp.Body.Close()
+
+	logger.Debug(resp.Status)
+
+	// Check if the response status is OK (200)
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("Response status : " + resp.Status)
+		logger.Error("Response status code : " + string(resp.StatusCode))
+		return fmt.Errorf("API call failed with status %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	// Check if the response is gzip encoded
+	var reader io.Reader = resp.Body
+	if resp.Header.Get("Content-Encoding") == "gzip" {
+		// Create a new gzip reader to decompress the content
+		gzipReader, err := gzip.NewReader(reader)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		defer gzipReader.Close()
+		reader = gzipReader
+	}
+
+	// Read the decompressed body
+	bodyBytes, err := io.ReadAll(reader)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	// Print the raw response for debugging (you can remove this in production)
+	logger.Debug(string(bodyBytes))
+
+	// If the response is JSON, we can unmarshal it into a Go struct
+	var searchResult []ViewSearchResult //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
+	err = json.Unmarshal(bodyBytes, &searchResult)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	/*for _, ticket := range ticketInvent.InventoryTickets {
+		logger.Debug(fmt.Sprintf("Ticket : %d", ticket.TicketNo))
+	}*/
+
+	// Now pass to the flattening function
+	flattened := flattenViewSearchResult(searchResult)
+	logger.Debug(fmt.Sprintf("InventoryTickets: %+v", flattened))
+
+	// Set the ID (required for Terraform state tracking)
+	d.SetId("000000000001") // or dynamic, e.g., hash, timestamp, etc.
+
+	// Set the data to schema fields
+	if err := d.Set("inventory", flattened); err != nil {
+		return fmt.Errorf("failed to set inventory: %w", err)
+	}
+
+	return nil
+}
+
 // dataSourceTicketRead function is responsible for reading the ticket from the API
 func dataSourceTicketRead(d *schema.ResourceData, meta interface{}) error {
 	cred := meta.(*CloudportalAPIClient)
 
-	if cred.isdebug {
+	/*if cred.isdebug {
 		// Create a new logger with debug enabled
 		// Initialize the logger once, using debugEnabled=true
 		_, err := logger.NewLogger(true)
@@ -363,7 +495,7 @@ func dataSourceTicketRead(d *schema.ResourceData, meta interface{}) error {
 			log.Fatal("Error initializing logger:", err)
 		}
 		defer logger.Close()
-	}
+	}*/
 
 	ticketID := d.Get("id").(string)
 	//ticketurl := "https://demand-module-dev.azurewebsites.net/api"
@@ -674,6 +806,20 @@ func flattenInventoryTickets(tickets []TicketInventory) []interface{} {
 			"resource_contract_name":                    ticket.ResourceContractName,
 			"catalog_application_source":                ticket.CatalogApplicationSource,
 		}
+	}
+	return result
+}
+
+// Helper function to flatten
+func flattenViewSearchResult(searchResult []ViewSearchResult) []interface{} {
+	var result []interface{}
+	for _, searchres := range searchResult {
+		result = append(result, map[string]interface{}{
+			"ticketno":    searchres.TicketNo,
+			"title":       searchres.Title,
+			"description": searchres.Description,
+			"requester":   flattenUsers(searchres.Requester),
+		})
 	}
 	return result
 }

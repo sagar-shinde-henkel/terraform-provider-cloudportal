@@ -589,7 +589,7 @@ func catalogfieldschema() *schema.Resource {
 	}
 }
 
-func ticketinventory() map[string]*schema.Schema {
+func ticketinventoryschema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
 		"ticket_loud_costs":                         {Type: schema.TypeFloat, Optional: true, Description: "loud costs for the ticket"},
 		"ticket_one_time_costs_utilized":            {Type: schema.TypeFloat, Optional: true, Description: "Utilized one-time costs"},
@@ -634,5 +634,30 @@ func ticketinventory() map[string]*schema.Schema {
 		"cata_logresource_id":                       {Type: schema.TypeString, Optional: true, Description: "Catalog resource ID"},
 		"resource_contract_name":                    {Type: schema.TypeString, Optional: true, Description: "Contract name for the resource"},
 		"catalog_application_source":                {Type: schema.TypeString, Optional: true, Description: "Source application for catalog entry"},
+	}
+}
+
+func viewsearchresultschema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"ticketno": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "ticket number",
+		},
+		"title": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "title of ticket",
+		},
+		"description": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "descriptin of the ticket",
+		},
+		"requester": {
+			Type:     schema.TypeList,
+			Optional: true,
+			Elem:     userschema(),
+		},
 	}
 }
