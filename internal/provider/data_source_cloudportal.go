@@ -242,15 +242,6 @@ func dataSourceTicketSearch() *schema.Resource {
 	return &schema.Resource{
 		Read:   dataSourceTicketSearchRead,
 		Schema: viewsearchresultschema(), // Reuse the Ticket schema defined earlier
-		/*Schema: map[string]*schema.Schema{
-			"searchresult": {
-				Type:     schema.TypeList,
-				Computed: true,
-				Elem: &schema.Resource{
-					Schema: viewsearchresultschema(), // <-- Use function here
-				},
-			},
-		},*/
 	}
 }
 
@@ -377,12 +368,21 @@ func dataSourceTicketInventroyRead(d *schema.ResourceData, meta interface{}) err
 func dataSourceTicketSearchRead(d *schema.ResourceData, meta interface{}) error {
 	cred := meta.(*CloudportalAPIClient)
 
+	if cred.isdebug {
+		// Create a new logger with debug enabled
+		// Initialize the logger once, using debugEnabled=true
+		_, err := logger.NewLogger(true)
+		if err != nil {
+			log.Fatal("Error initializing logger:", err)
+		}
+		defer logger.Close()
+	}
+
 	//Read required values
 	// Construct the URL for fetching the ticket details
-	key := d.Get("keyword").(string)
-	keyword := fmt.Sprintf("keyword=%s", key)
+	keyword := d.Get("keyword").(string)
 
-	url := fmt.Sprintf("%s/ticket/search?%s", cred.BaseURL, keyword)
+	url := fmt.Sprintf("%s/ticket/search?keyword=%s", cred.BaseURL, keyword)
 
 	logger.Debug(url)
 
@@ -458,25 +458,28 @@ func dataSourceTicketSearchRead(d *schema.ResourceData, meta interface{}) error 
 	logger.Debug(string(bodyBytes))
 
 	// If the response is JSON, we can unmarshal it into a Go struct
+	/*type SearchResponse struct {
+		SearchTickets []ViewSearchResult `json:"searchResultTickets"`
+	}*/
 	var searchResult []ViewSearchResult //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
 	err = json.Unmarshal(bodyBytes, &searchResult)
 	if err != nil {
 		logger.Error(err.Error())
 	}
 
-	/*for _, ticket := range ticketInvent.InventoryTickets {
+	for _, ticket := range searchResult {
 		logger.Debug(fmt.Sprintf("Ticket : %d", ticket.TicketNo))
-	}*/
+	}
 
 	// Now pass to the flattening function
 	flattened := flattenViewSearchResult(searchResult)
-	logger.Debug(fmt.Sprintf("InventoryTickets: %+v", flattened))
+	logger.Debug(fmt.Sprintf("SearchResult: %+v", flattened))
 
 	// Set the ID (required for Terraform state tracking)
 	d.SetId("000000000001") // or dynamic, e.g., hash, timestamp, etc.
 
 	// Set the data to schema fields
-	if err := d.Set("inventory", flattened); err != nil {
+	if err := d.Set("SearchResult", flattened); err != nil {
 		return fmt.Errorf("failed to set inventory: %w", err)
 	}
 
@@ -487,7 +490,7 @@ func dataSourceTicketSearchRead(d *schema.ResourceData, meta interface{}) error 
 func dataSourceTicketRead(d *schema.ResourceData, meta interface{}) error {
 	cred := meta.(*CloudportalAPIClient)
 
-	/*if cred.isdebug {
+	if cred.isdebug {
 		// Create a new logger with debug enabled
 		// Initialize the logger once, using debugEnabled=true
 		_, err := logger.NewLogger(true)
@@ -495,7 +498,7 @@ func dataSourceTicketRead(d *schema.ResourceData, meta interface{}) error {
 			log.Fatal("Error initializing logger:", err)
 		}
 		defer logger.Close()
-	}*/
+	}
 
 	ticketID := d.Get("id").(string)
 	//ticketurl := "https://demand-module-dev.azurewebsites.net/api"

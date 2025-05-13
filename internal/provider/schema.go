@@ -639,25 +639,6 @@ func ticketinventoryschema() map[string]*schema.Schema {
 
 func viewsearchresultschema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"ticketno": {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Description: "ticket number",
-		},
-		"title": {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Description: "title of ticket",
-		},
-		"description": {
-			Type:        schema.TypeString,
-			Optional:    true,
-			Description: "descriptin of the ticket",
-		},
-		"requester": {
-			Type:     schema.TypeList,
-			Optional: true,
-			Elem:     userschema(),
-		},
+		"keyword": {Type: schema.TypeString, Required: true, Description: "Search keyword"},
 	}
 }
