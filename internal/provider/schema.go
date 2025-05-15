@@ -637,8 +637,64 @@ func ticketinventoryschema() map[string]*schema.Schema {
 	}
 }
 
-func viewsearchresultschema() map[string]*schema.Schema {
+func ticketsSearchSchema() map[string]*schema.Schema {
 	return map[string]*schema.Schema{
-		"keyword": {Type: schema.TypeString, Required: true, Description: "Search keyword"},
+		// INPUT: keyword for filtering tickets
+		"keyword": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Keyword to filter tickets by title or description.",
+		},
+
+		// OUTPUT: list of flattened tickets
+		"tickets": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"ticket_no": {
+						Type:     schema.TypeInt,
+						Computed: true,
+					},
+					"title": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"description": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"requester": {
+						Type:     schema.TypeList,
+						Computed: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"email": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+								"user_principal_name": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+								"id": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+								"display_name": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+								"roles": {
+									Type:     schema.TypeList,
+									Computed: true,
+									Elem:     &schema.Schema{Type: schema.TypeString},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }

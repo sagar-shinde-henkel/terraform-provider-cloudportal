@@ -212,6 +212,10 @@ type ViewSearchResult struct {
 	Requester   []User `json:"requester"`   // Ticket Requester
 }
 
+type SearchResponse struct {
+	SearchTickets []ViewSearchResult `json:"searchResultTickets"`
+}
+
 func dataSourceTicket() *schema.Resource {
 	return &schema.Resource{
 		Read:   dataSourceTicketRead,
@@ -241,7 +245,7 @@ func dataSourceTicketInventory() *schema.Resource {
 func dataSourceTicketSearch() *schema.Resource {
 	return &schema.Resource{
 		Read:   dataSourceTicketSearchRead,
-		Schema: viewsearchresultschema(), // Reuse the Ticket schema defined earlier
+		Schema: ticketsSearchSchema(), // Reuse the Ticket schema defined earlier
 	}
 }
 
@@ -457,30 +461,22 @@ func dataSourceTicketSearchRead(d *schema.ResourceData, meta interface{}) error 
 	// Print the raw response for debugging (you can remove this in production)
 	logger.Debug(string(bodyBytes))
 
-	// If the response is JSON, we can unmarshal it into a Go struct
-	/*type SearchResponse struct {
-		SearchTickets []ViewSearchResult `json:"searchResultTickets"`
-	}*/
-	var searchResult []ViewSearchResult //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
+	var searchResult []searchTicket //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
 	err = json.Unmarshal(bodyBytes, &searchResult)
 	if err != nil {
 		logger.Error(err.Error())
 	}
 
-	for _, ticket := range searchResult {
-		logger.Debug(fmt.Sprintf("Ticket : %d", ticket.TicketNo))
-	}
-
 	// Now pass to the flattening function
-	flattened := flattenViewSearchResult(searchResult)
-	logger.Debug(fmt.Sprintf("SearchResult: %+v", flattened))
+	//flattened := flattenViewSearchResult(searchResult.searchTickets)
+	flattened := flattenTickets(searchResult)
+	//logger.Debug(fmt.Sprintf("SearchResult: %+v", flattened))
 
 	// Set the ID (required for Terraform state tracking)
-	d.SetId("000000000001") // or dynamic, e.g., hash, timestamp, etc.
+	d.SetId(keyword) // or dynamic, e.g., hash, timestamp, etc.
 
-	// Set the data to schema fields
-	if err := d.Set("SearchResult", flattened); err != nil {
-		return fmt.Errorf("failed to set inventory: %w", err)
+	if err := d.Set("tickets", flattened); err != nil {
+		logger.Debug(err.Error())
 	}
 
 	return nil
@@ -813,16 +809,34 @@ func flattenInventoryTickets(tickets []TicketInventory) []interface{} {
 	return result
 }
 
-// Helper function to flatten
-func flattenViewSearchResult(searchResult []ViewSearchResult) []interface{} {
-	var result []interface{}
-	for _, searchres := range searchResult {
-		result = append(result, map[string]interface{}{
-			"ticketno":    searchres.TicketNo,
-			"title":       searchres.Title,
-			"description": searchres.Description,
-			"requester":   flattenUsers(searchres.Requester),
-		})
+type searchTicket struct {
+	TicketNo    int    `json:"ticketNo"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Requester   User   `json:"requester"`
+}
+
+func flattenTickets(tickets []searchTicket) []map[string]interface{} {
+	flattened := make([]map[string]interface{}, 0, len(tickets))
+
+	for _, ticket := range tickets {
+		flattenedTicket := map[string]interface{}{
+			"ticket_no":   ticket.TicketNo,
+			"title":       ticket.Title,
+			"description": ticket.Description,
+			"requester": []interface{}{ // Note: requester is a list with one map
+				map[string]interface{}{
+					"email":               ticket.Requester.Email,
+					"user_principal_name": ticket.Requester.UserPrincipalName,
+					"id":                  ticket.Requester.ID,
+					"display_name":        ticket.Requester.DisplayName,
+					"roles":               ticket.Requester.Roles,
+				},
+			},
+		}
+
+		flattened = append(flattened, flattenedTicket)
 	}
-	return result
+
+	return flattened
 }
