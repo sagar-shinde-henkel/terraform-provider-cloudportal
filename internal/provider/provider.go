@@ -24,13 +24,12 @@ type CloudportalAPIClient struct {
 }
 
 // NewCloudportalAPIClient initializes a new API client
-func NewCloudportalAPIClient(azidentity *azidentity.ClientSecretCredential, apiKey, baseURL string, tenID string, cpID string, debuginfo bool) *CloudportalAPIClient {
+func NewCloudportalAPIClient(azidentity *azidentity.ClientSecretCredential, apiKey, baseURL string, tenID string, cpID string) *CloudportalAPIClient {
 	return &CloudportalAPIClient{
 		BaseURL:     baseURL,
 		APIKey:      apiKey,
 		Client:      &http.Client{},
 		aziclient:   azidentity,
-		isdebug:     debuginfo,
 		tenantID:    tenID,
 		cp_clientID: cpID,
 	}
@@ -49,6 +48,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		if err != nil {
 			log.Fatal("Error initializing logger:", err)
 		}
+		defer logger.Close()
 	}
 	logger.Info("start")
 	if apiKey == "" || baseURL == "" {
@@ -68,7 +68,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		logger.Error(err.Error())
 	}
 
-	apiclient := NewCloudportalAPIClient(client, apiKey, baseURL, tenantID, cp_clientID, debugInfo)
+	apiclient := NewCloudportalAPIClient(client, apiKey, baseURL, tenantID, cp_clientID)
 
 	return apiclient, nil
 }
@@ -126,7 +126,9 @@ func Provider() *schema.Provider {
 			"cloudportal_resource": ResourceCustom(),
 		},*/
 		DataSourcesMap: map[string]*schema.Resource{
-			"cloudportal_datasource": dataSourceTicket(), // Add data source here
+			"cloudportal_datasource":                  dataSourceTicket(),          // Add data source here
+			"cloudportal_datasource_ticket_inventory": dataSourceTicketInventory(), // Add data source here
+			"cloudportal_datasource_ticket_search":    dataSourceTicketSearch(),
 		},
 	}
 }

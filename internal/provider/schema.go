@@ -588,3 +588,113 @@ func catalogfieldschema() *schema.Resource {
 		},
 	}
 }
+
+func ticketinventoryschema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		"ticket_loud_costs":                         {Type: schema.TypeFloat, Optional: true, Description: "loud costs for the ticket"},
+		"ticket_one_time_costs_utilized":            {Type: schema.TypeFloat, Optional: true, Description: "Utilized one-time costs"},
+		"ticket_one_time_costs_utilized_this_month": {Type: schema.TypeFloat, Optional: true, Description: "Utilized one-time costs for the current month"},
+		"ticket_one_time_cost":                      {Type: schema.TypeFloat, Optional: true, Description: "One-time cost for the ticket"},
+		"ticket_clarity_code_otc_code":              {Type: schema.TypeString, Optional: true, Description: "Clarity OTC code"},
+		"ticket_clarity_code_cost_center":           {Type: schema.TypeString, Optional: true, Description: "Clarity cost center"},
+		"ticket_clarity_code_code":                  {Type: schema.TypeString, Optional: true, Description: "Clarity code"},
+		"ticket_clarity_code_otc_cost_center":       {Type: schema.TypeString, Optional: true, Description: "Clarity OTC cost center"},
+		"ticket_cost_center":                        {Type: schema.TypeString, Optional: true, Description: "Ticket cost center"},
+		"ticket_cost_center_otc":                    {Type: schema.TypeString, Optional: true, Description: "Ticket OTC cost center"},
+		"ticket_changed_at":                         {Type: schema.TypeString, Optional: true, Description: "Timestamp when ticket was changed"},
+		"ticket_changed_by":                         {Type: schema.TypeString, Optional: true, Description: "User who changed the ticket"},
+		"ticket_service_provider_value":             {Type: schema.TypeString, Optional: true, Description: "Service provider value"},
+		"ticket_requester":                          {Type: schema.TypeString, Optional: true, Description: "Person who requested the ticket"},
+		"ticket_service_provider":                   {Type: schema.TypeString, Optional: true, Description: "Service provider name"},
+		"ticket_cloud_platform":                     {Type: schema.TypeString, Optional: true, Description: "Cloud platform associated with the ticket"},
+		"ticket_architect":                          {Type: schema.TypeString, Optional: true, Description: "Architect responsible"},
+		"ticket_no":                                 {Type: schema.TypeInt, Optional: true, Description: "Ticket number"},
+		"ticket_title":                              {Type: schema.TypeString, Optional: true, Description: "Title of the ticket"},
+		"ticket_app_owner":                          {Type: schema.TypeString, Optional: true, Description: "Application owner"},
+		"ticket_app_name":                           {Type: schema.TypeString, Optional: true, Description: "Application name"},
+		"ticket_app_id":                             {Type: schema.TypeString, Optional: true, Description: "Application ID"},
+		"ticket_application_manager":                {Type: schema.TypeString, Optional: true, Description: "Application manager"},
+		"ticket_cyber_risk_category":                {Type: schema.TypeString, Optional: true, Description: "Cyber risk category"},
+		"resource_id":                               {Type: schema.TypeString, Optional: true, Description: "Resource ID"},
+		"resource_status":                           {Type: schema.TypeString, Optional: true, Description: "Status of the resource"},
+		"resource_updated":                          {Type: schema.TypeString, Optional: true, Description: "Last update timestamp"},
+		"ticket_related_unit":                       {Type: schema.TypeString, Optional: true, Description: "Related organizational unit"},
+		"ticket_responsible_group_email":            {Type: schema.TypeString, Optional: true, Description: "Responsible group email"},
+		"ticket_cloud_costs":                        {Type: schema.TypeFloat, Optional: true, Description: "Cloud costs"},
+		"resource_app_id":                           {Type: schema.TypeString, Optional: true, Description: "Resource application ID"},
+		"resource_app_name":                         {Type: schema.TypeString, Optional: true, Description: "Resource application name"},
+		"resource_app_owner":                        {Type: schema.TypeString, Optional: true, Description: "Resource application owner"},
+		"resource_related_unit":                     {Type: schema.TypeString, Optional: true, Description: "Related unit for the resource"},
+		"resource_name":                             {Type: schema.TypeString, Optional: true, Description: "Name of the resource"},
+		"resource_type":                             {Type: schema.TypeString, Optional: true, Description: "Type of the resource"},
+		"resource_container":                        {Type: schema.TypeString, Optional: true, Description: "Container of the resource"},
+		"snow_group":                                {Type: schema.TypeString, Optional: true, Description: "Snow group"},
+		"cloud_template_master":                     {Type: schema.TypeString, Optional: true, Description: "Cloud template master"},
+		"ticket_status":                             {Type: schema.TypeString, Optional: true, Description: "Status of the ticket"},
+		"cata_logresource_id":                       {Type: schema.TypeString, Optional: true, Description: "Catalog resource ID"},
+		"resource_contract_name":                    {Type: schema.TypeString, Optional: true, Description: "Contract name for the resource"},
+		"catalog_application_source":                {Type: schema.TypeString, Optional: true, Description: "Source application for catalog entry"},
+	}
+}
+
+func ticketsSearchSchema() map[string]*schema.Schema {
+	return map[string]*schema.Schema{
+		// INPUT: keyword for filtering tickets
+		"keyword": {
+			Type:        schema.TypeString,
+			Optional:    true,
+			Description: "Keyword to filter tickets by title or description.",
+		},
+
+		// OUTPUT: list of flattened tickets
+		"tickets": {
+			Type:     schema.TypeList,
+			Computed: true,
+			Elem: &schema.Resource{
+				Schema: map[string]*schema.Schema{
+					"ticket_no": {
+						Type:     schema.TypeInt,
+						Computed: true,
+					},
+					"title": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"description": {
+						Type:     schema.TypeString,
+						Computed: true,
+					},
+					"requester": {
+						Type:     schema.TypeList,
+						Computed: true,
+						Elem: &schema.Resource{
+							Schema: map[string]*schema.Schema{
+								"email": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+								"user_principal_name": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+								"id": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+								"display_name": {
+									Type:     schema.TypeString,
+									Computed: true,
+								},
+								"roles": {
+									Type:     schema.TypeList,
+									Computed: true,
+									Elem:     &schema.Schema{Type: schema.TypeString},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}

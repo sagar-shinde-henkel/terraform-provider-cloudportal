@@ -43,6 +43,56 @@ type Ticket struct {
 	CatalogItems        []CatalogItem `json:"catalogitems"`        // Catalog items associated with the ticket.
 }
 
+type TicketInventory struct {
+	TicketloudCosts                     float64 `json:"ticketloudCosts"`
+	TicketOneTimeCostsUtilized          float64 `json:"ticketOneTimeCostsUtilized"`
+	TicketOneTimeCostsUtilizedThisMonth float64 `json:"ticketOneTimeCostsUtilizedThisMonth"`
+	TicketOneTimeCost                   float64 `json:"ticketOneTimeCost"`
+	TicketClarityCodeOTCCode            string  `json:"ticketClarityCodeOTCCode"`
+	TicketClarityCodeCostCenter         string  `json:"ticketClarityCodeCostCenter"`
+	TicketClarityCodeCode               string  `json:"ticketClarityCodeCode"`
+	TicketClarityCodeOTCCostCenter      string  `json:"ticketClarityCodeOTCCostCenter"`
+	TicketCostCenter                    string  `json:"ticketCostCenter"`
+	TicketCostCenterOTC                 string  `json:"ticketCostCenterOTC"`
+	TicketChangedAt                     string  `json:"ticketChangedAt"`
+	TicketChangedBy                     string  `json:"ticketChangedBy"`
+	TicketServiceProviderValue          string  `json:"ticketServiceProviderValue"`
+	TicketRequester                     string  `json:"ticketRequester"`
+	TicketServiceProvider               string  `json:"ticketServiceProvider"`
+	TicketCloudPlatform                 string  `json:"ticketCloudPlatform"`
+	TicketArchitect                     string  `json:"ticketArchitect"`
+	TicketNo                            int     `json:"ticketNo"`
+	TicketTitle                         string  `json:"ticketTitle"`
+	TicketAppOwner                      string  `json:"ticketAppOwner"`
+	TicketAppName                       string  `json:"ticketAppName"`
+	TicketAppID                         string  `json:"ticketAppID"`
+	TicketApplicationManager            string  `json:"ticketApplicationManager"`
+	TicketCyberRiskCategory             string  `json:"ticketCyberRiskCategory"`
+	ResourceID                          string  `json:"resourceID"`
+	ResourceStatus                      string  `json:"resourceStatus"`
+	ResourceUpdated                     string  `json:"resourceUpdated"`
+	TicketRelatedUnit                   string  `json:"ticketRelatedUnit"`
+	TicketResponsibleGroupEmail         string  `json:"ticketResponsibleGroupEmail"`
+	TicketCloudCosts                    float64 `json:"ticketCloudCosts"`
+	ResourceAppID                       string  `json:"resourceAppID"`
+	ResourceAppName                     string  `json:"resourceAppName"`
+	ResourceAppOwner                    string  `json:"resourceAppOwner"`
+	ResourceRelatedUnit                 string  `json:"resourceRelatedUnit"`
+	ResourceName                        string  `json:"resourceName"`
+	ResourceType                        string  `json:"resourceType"`
+	ResourceContainer                   string  `json:"resourceContainer"`
+	SnowGroup                           string  `json:"snowGroup"`
+	CloudTemplateMaster                 string  `json:"cloudTemplateMaster"`
+	TicketStatus                        string  `json:"ticketStatus"`
+	CataLogresourceID                   string  `json:"cataLogresourceId"`
+	ResourceContractName                string  `json:"resourceContractName"`
+	CatalogApplicationSource            string  `json:"catalogApplicationSource"`
+}
+
+type InventoryResponse struct {
+	InventoryTickets []TicketInventory `json:"inventoryTickets"`
+}
+
 type User struct {
 	ID                string   `json:"id"`
 	Email             string   `json:"email"`
@@ -155,6 +205,17 @@ type ClarityCode struct {
 	Tower       string   `json:"tower"`       // Tower associated with the clarity code
 }
 
+type ViewSearchResult struct {
+	TicketNo    int    `json:"ticketno"`    // Ticket number.
+	Title       string `json:"title"`       // Ticket title.
+	Description string `json:"description"` // Ticket description.
+	Requester   []User `json:"requester"`   // Ticket Requester
+}
+
+type SearchResponse struct {
+	SearchTickets []ViewSearchResult `json:"searchResultTickets"`
+}
+
 func dataSourceTicket() *schema.Resource {
 	return &schema.Resource{
 		Read:   dataSourceTicketRead,
@@ -163,6 +224,262 @@ func dataSourceTicket() *schema.Resource {
 		// Ensure the 'id' is the only required field for querying the data source
 		// In this case, the `ticket_id` is the identifier to fetch the ticket.
 	}
+}
+
+func dataSourceTicketInventory() *schema.Resource {
+	return &schema.Resource{
+		Read: dataSourceTicketInventroyRead,
+		//Schema: ticketinventory(), // Reuse the Ticket schema defined earlier
+		Schema: map[string]*schema.Schema{
+			"inventory": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: ticketinventoryschema(), // <-- Use function here
+				},
+			},
+		},
+	}
+}
+
+func dataSourceTicketSearch() *schema.Resource {
+	return &schema.Resource{
+		Read:   dataSourceTicketSearchRead,
+		Schema: ticketsSearchSchema(), // Reuse the Ticket schema defined earlier
+	}
+}
+
+// dataSourceTicketInventory function is responsible for reading the ticket from the API
+func dataSourceTicketInventroyRead(d *schema.ResourceData, meta interface{}) error {
+	cred := meta.(*CloudportalAPIClient)
+
+	/*if cred.isdebug {
+		// Create a new logger with debug enabled
+		// Initialize the logger once, using debugEnabled=true
+		_, err := logger.NewLogger(true)
+		if err != nil {
+			log.Fatal("Error initializing logger:", err)
+		}
+		defer logger.Close()
+	}*/
+
+	//ticketurl := "https://demand-module-dev.azurewebsites.net/api"
+	// Example: API call to fetch the ticket details by ID
+	// Replace this with your actual API client logic
+
+	// Construct the URL for fetching the ticket details
+	url := fmt.Sprintf("%s/ticket/inventory", cred.BaseURL)
+
+	logger.Debug(url)
+
+	// Create a new request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		logger.Error(err.Error())
+		return fmt.Errorf("failed to create HTTP request: %s", err)
+	}
+
+	// Step 2: Prepare token request options
+
+	tokenRequestOptions := policy.TokenRequestOptions{
+		Scopes: []string{cred.cp_clientID + "/.default"}, // Use the required scope for Azure management API Global.Appl.GoogleCloudPlatform.X
+	}
+
+	// Step 3: Get the access token
+	token, err := cred.aziclient.GetToken(context.Background(), tokenRequestOptions)
+	if err != nil {
+		logger.Error(err.Error())
+		log.Fatalf("failed to obtain a token: %v", err)
+	}
+	logger.Debug("Token : " + token.Token)
+	// Set custom headers
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	req.Header.Set("Accept-Language", "en-IN,en-GB;q=0.9,en;q=0.8,en-US;q=0.7")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Add("Authorization", "Bearer "+token.Token)
+
+	// Set the API key in the Authorization header (replace with your actual method of authentication)
+	//req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", client.APIKey))
+
+	// Create a new HTTP client
+	//client := &http.Client{}
+
+	// Send the request using the HTTP client
+	resp, err := cred.Client.Do(req)
+	if err != nil {
+		logger.Error("Send request : " + err.Error())
+		return err
+	}
+	defer resp.Body.Close()
+
+	logger.Debug(resp.Status)
+
+	// Check if the response status is OK (200)
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("Response status : " + resp.Status)
+		logger.Error("Response status code : " + string(resp.StatusCode))
+		return fmt.Errorf("API call failed with status %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	// Check if the response is gzip encoded
+	var reader io.Reader = resp.Body
+	if resp.Header.Get("Content-Encoding") == "gzip" {
+		// Create a new gzip reader to decompress the content
+		gzipReader, err := gzip.NewReader(reader)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		defer gzipReader.Close()
+		reader = gzipReader
+	}
+
+	// Read the decompressed body
+	bodyBytes, err := io.ReadAll(reader)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	// Print the raw response for debugging (you can remove this in production)
+	//logger.Debug(string(bodyBytes))
+
+	// If the response is JSON, we can unmarshal it into a Go struct
+	var ticketInvent InventoryResponse //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
+	err = json.Unmarshal(bodyBytes, &ticketInvent)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	/*for _, ticket := range ticketInvent.InventoryTickets {
+		logger.Debug(fmt.Sprintf("Ticket : %d", ticket.TicketNo))
+	}*/
+
+	// Now pass to the flattening function
+	flattened := flattenInventoryTickets(ticketInvent.InventoryTickets)
+	logger.Debug(fmt.Sprintf("InventoryTickets: %+v", flattened))
+
+	// Set the ID (required for Terraform state tracking)
+	d.SetId("000000000001") // or dynamic, e.g., hash, timestamp, etc.
+
+	// Set the data to schema fields
+	if err := d.Set("inventory", flattened); err != nil {
+		return fmt.Errorf("failed to set inventory: %w", err)
+	}
+
+	return nil
+}
+
+func dataSourceTicketSearchRead(d *schema.ResourceData, meta interface{}) error {
+	cred := meta.(*CloudportalAPIClient)
+
+	if cred.isdebug {
+		// Create a new logger with debug enabled
+		// Initialize the logger once, using debugEnabled=true
+		_, err := logger.NewLogger(true)
+		if err != nil {
+			log.Fatal("Error initializing logger:", err)
+		}
+		defer logger.Close()
+	}
+
+	//Read required values
+	// Construct the URL for fetching the ticket details
+	keyword := d.Get("keyword").(string)
+
+	url := fmt.Sprintf("%s/ticket/search?keyword=%s", cred.BaseURL, keyword)
+
+	logger.Debug(url)
+
+	// Create a new request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		logger.Error(err.Error())
+		return fmt.Errorf("failed to create HTTP request: %s", err)
+	}
+
+	// Step 2: Prepare token request options
+
+	tokenRequestOptions := policy.TokenRequestOptions{
+		Scopes: []string{cred.cp_clientID + "/.default"}, // Use the required scope for Azure management API Global.Appl.GoogleCloudPlatform.X
+	}
+
+	// Step 3: Get the access token
+	token, err := cred.aziclient.GetToken(context.Background(), tokenRequestOptions)
+	if err != nil {
+		logger.Error(err.Error())
+		log.Fatalf("failed to obtain a token: %v", err)
+	}
+	logger.Debug("Token : " + token.Token)
+	// Set custom headers
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	req.Header.Set("Accept-Language", "en-IN,en-GB;q=0.9,en;q=0.8,en-US;q=0.7")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Add("Authorization", "Bearer "+token.Token)
+
+	// Set the API key in the Authorization header (replace with your actual method of authentication)
+	//req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", client.APIKey))
+
+	// Create a new HTTP client
+	//client := &http.Client{}
+
+	// Send the request using the HTTP client
+	resp, err := cred.Client.Do(req)
+	if err != nil {
+		logger.Error("Send request : " + err.Error())
+		return err
+	}
+	defer resp.Body.Close()
+
+	logger.Debug(resp.Status)
+
+	// Check if the response status is OK (200)
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("Response status : " + resp.Status)
+		logger.Error("Response status code : " + string(resp.StatusCode))
+		return fmt.Errorf("API call failed with status %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	// Check if the response is gzip encoded
+	var reader io.Reader = resp.Body
+	if resp.Header.Get("Content-Encoding") == "gzip" {
+		// Create a new gzip reader to decompress the content
+		gzipReader, err := gzip.NewReader(reader)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		defer gzipReader.Close()
+		reader = gzipReader
+	}
+
+	// Read the decompressed body
+	bodyBytes, err := io.ReadAll(reader)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	// Print the raw response for debugging (you can remove this in production)
+	logger.Debug(string(bodyBytes))
+
+	var searchResult []searchTicket //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
+	err = json.Unmarshal(bodyBytes, &searchResult)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	// Now pass to the flattening function
+	//flattened := flattenViewSearchResult(searchResult.searchTickets)
+	flattened := flattenTickets(searchResult)
+	//logger.Debug(fmt.Sprintf("SearchResult: %+v", flattened))
+
+	// Set the ID (required for Terraform state tracking)
+	d.SetId(keyword) // or dynamic, e.g., hash, timestamp, etc.
+
+	if err := d.Set("tickets", flattened); err != nil {
+		logger.Debug(err.Error())
+	}
+
+	return nil
 }
 
 // dataSourceTicketRead function is responsible for reading the ticket from the API
@@ -438,4 +755,88 @@ func flattenStringList(list []string) []interface{} {
 		result = append(result, item)
 	}
 	return result
+}
+
+func flattenInventoryTickets(tickets []TicketInventory) []interface{} {
+	result := make([]interface{}, len(tickets))
+	for i, ticket := range tickets {
+		result[i] = map[string]interface{}{
+			"ticket_loud_costs":                         ticket.TicketloudCosts,
+			"ticket_one_time_costs_utilized":            ticket.TicketOneTimeCostsUtilized,
+			"ticket_one_time_costs_utilized_this_month": ticket.TicketOneTimeCostsUtilizedThisMonth,
+			"ticket_one_time_cost":                      ticket.TicketOneTimeCost,
+			"ticket_clarity_code_otc_code":              ticket.TicketClarityCodeOTCCode,
+			"ticket_clarity_code_cost_center":           ticket.TicketClarityCodeCostCenter,
+			"ticket_clarity_code_code":                  ticket.TicketClarityCodeCode,
+			"ticket_clarity_code_otc_cost_center":       ticket.TicketClarityCodeOTCCostCenter,
+			"ticket_cost_center":                        ticket.TicketCostCenter,
+			"ticket_cost_center_otc":                    ticket.TicketCostCenterOTC,
+			"ticket_changed_at":                         ticket.TicketChangedAt,
+			"ticket_changed_by":                         ticket.TicketChangedBy,
+			"ticket_service_provider_value":             ticket.TicketServiceProviderValue,
+			"ticket_requester":                          ticket.TicketRequester,
+			"ticket_service_provider":                   ticket.TicketServiceProvider,
+			"ticket_cloud_platform":                     ticket.TicketCloudPlatform,
+			"ticket_architect":                          ticket.TicketArchitect,
+			"ticket_no":                                 ticket.TicketNo,
+			"ticket_title":                              ticket.TicketTitle,
+			"ticket_app_owner":                          ticket.TicketAppOwner,
+			"ticket_app_name":                           ticket.TicketAppName,
+			"ticket_app_id":                             ticket.TicketAppID,
+			"ticket_application_manager":                ticket.TicketApplicationManager,
+			"ticket_cyber_risk_category":                ticket.TicketCyberRiskCategory,
+			"resource_id":                               ticket.ResourceID,
+			"resource_status":                           ticket.ResourceStatus,
+			"resource_updated":                          ticket.ResourceUpdated,
+			"ticket_related_unit":                       ticket.TicketRelatedUnit,
+			"ticket_responsible_group_email":            ticket.TicketResponsibleGroupEmail,
+			"ticket_cloud_costs":                        ticket.TicketCloudCosts,
+			"resource_app_id":                           ticket.ResourceAppID,
+			"resource_app_name":                         ticket.ResourceAppName,
+			"resource_app_owner":                        ticket.ResourceAppOwner,
+			"resource_related_unit":                     ticket.ResourceRelatedUnit,
+			"resource_name":                             ticket.ResourceName,
+			"resource_type":                             ticket.ResourceType,
+			"resource_container":                        ticket.ResourceContainer,
+			"snow_group":                                ticket.SnowGroup,
+			"cloud_template_master":                     ticket.CloudTemplateMaster,
+			"ticket_status":                             ticket.TicketStatus,
+			"cata_logresource_id":                       ticket.CataLogresourceID,
+			"resource_contract_name":                    ticket.ResourceContractName,
+			"catalog_application_source":                ticket.CatalogApplicationSource,
+		}
+	}
+	return result
+}
+
+type searchTicket struct {
+	TicketNo    int    `json:"ticketNo"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Requester   User   `json:"requester"`
+}
+
+func flattenTickets(tickets []searchTicket) []map[string]interface{} {
+	flattened := make([]map[string]interface{}, 0, len(tickets))
+
+	for _, ticket := range tickets {
+		flattenedTicket := map[string]interface{}{
+			"ticket_no":   ticket.TicketNo,
+			"title":       ticket.Title,
+			"description": ticket.Description,
+			"requester": []interface{}{ // Note: requester is a list with one map
+				map[string]interface{}{
+					"email":               ticket.Requester.Email,
+					"user_principal_name": ticket.Requester.UserPrincipalName,
+					"id":                  ticket.Requester.ID,
+					"display_name":        ticket.Requester.DisplayName,
+					"roles":               ticket.Requester.Roles,
+				},
+			},
+		}
+
+		flattened = append(flattened, flattenedTicket)
+	}
+
+	return flattened
 }
