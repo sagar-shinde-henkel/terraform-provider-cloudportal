@@ -129,6 +129,7 @@ func Provider() *schema.Provider {
 			"cloudportal_datasource":                  dataSourceTicket(),          // Add data source here
 			"cloudportal_datasource_ticket_inventory": dataSourceTicketInventory(), // Add data source here
 			"cloudportal_datasource_ticket_search":    dataSourceTicketSearch(),
+			"cloudportal_datasource_ticket":           dataSourceTickets(),
 		},
 	}
 }

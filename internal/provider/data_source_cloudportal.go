@@ -43,6 +43,11 @@ type Ticket struct {
 	CatalogItems        []CatalogItem `json:"catalogitems"`        // Catalog items associated with the ticket.
 }
 
+type TicketList struct {
+	ViewTicketListItems []Ticket `json:"viewTicketListItems"`
+	AllTickets          bool     `json:"allTickets"`
+}
+
 type TicketInventory struct {
 	TicketloudCosts                     float64 `json:"ticketloudCosts"`
 	TicketOneTimeCostsUtilized          float64 `json:"ticketOneTimeCostsUtilized"`
@@ -221,6 +226,34 @@ func dataSourceTicket() *schema.Resource {
 		Read:   dataSourceTicketRead,
 		Schema: TicketSchema(), // Reuse the Ticket schema defined earlier
 
+		// Ensure the 'id' is the only required field for querying the data source
+		// In this case, the `ticket_id` is the identifier to fetch the ticket.
+	}
+}
+
+func dataSourceTickets() *schema.Resource {
+	return &schema.Resource{
+		Read: dataSourceTicketsRead,
+		Schema: map[string]*schema.Schema{
+			//input schema
+			"onlyactive": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Tickets only active.",
+			},
+			"assignedtome": {
+				Type:        schema.TypeBool,
+				Optional:    true,
+				Description: "Tickets assigned to me",
+			},
+			//output schema
+			"tickets": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem:     ticketsSchema(), // <-- Use function here
+
+			},
+		},
 		// Ensure the 'id' is the only required field for querying the data source
 		// In this case, the `ticket_id` is the identifier to fetch the ticket.
 	}
@@ -477,6 +510,123 @@ func dataSourceTicketSearchRead(d *schema.ResourceData, meta interface{}) error 
 
 	if err := d.Set("tickets", flattened); err != nil {
 		logger.Debug(err.Error())
+	}
+
+	return nil
+}
+
+func dataSourceTicketsRead(d *schema.ResourceData, meta interface{}) error {
+	cred := meta.(*CloudportalAPIClient)
+
+	if cred.isdebug {
+		// Create a new logger with debug enabled
+		// Initialize the logger once, using debugEnabled=true
+		_, err := logger.NewLogger(true)
+		if err != nil {
+			log.Fatal("Error initializing logger:", err)
+		}
+		defer logger.Close()
+	}
+	urloption := ""
+
+	if val, ok := d.GetOk("onlyactive"); ok {
+		onlyActive := val.(bool)
+		if onlyActive {
+			urloption = addurloptions(urloption, "onlyActive=", "true")
+		} else {
+			urloption = addurloptions(urloption, "onlyActive=", "false")
+		}
+	}
+	if val, ok := d.GetOk("assignedtome"); ok {
+		assignedToMe := val.(bool)
+		if assignedToMe {
+			urloption = addurloptions(urloption, "assignedToMe=", "true")
+		} else {
+			urloption = addurloptions(urloption, "assignedToMe=", "false")
+		}
+	}
+
+	//ticketurl := "https://demand-module-prod.azurewebsites.net/api/ticket?onlyActive=true&assignedToMe=true&serviceProviders=string"
+	// Example: API call to fetch the ticket details by ID
+	// Replace this with your actual API client logic
+
+	// Construct the URL for fetching the ticket details
+	url := fmt.Sprintf("%s/ticket%s", cred.BaseURL, urloption)
+
+	logger.Debug(url)
+
+	// Create a new request
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		logger.Error(err.Error())
+		return fmt.Errorf("failed to create HTTP request: %s", err)
+	}
+
+	// Step 2: Prepare token request options
+
+	tokenRequestOptions := policy.TokenRequestOptions{
+		Scopes: []string{cred.cp_clientID + "/.default"}, // Use the required scope for Azure management API Global.Appl.GoogleCloudPlatform.X
+	}
+
+	// Step 3: Get the access token
+	token, err := cred.aziclient.GetToken(context.Background(), tokenRequestOptions)
+	if err != nil {
+		logger.Error(err.Error())
+		log.Fatalf("failed to obtain a token: %v", err)
+	}
+	logger.Debug("Token : " + token.Token)
+	// Set custom headers
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br, zstd")
+	req.Header.Set("Accept-Language", "en-IN,en-GB;q=0.9,en;q=0.8,en-US;q=0.7")
+	req.Header.Set("Connection", "keep-alive")
+	req.Header.Add("Authorization", "Bearer "+token.Token)
+
+	// Set the API key in the Authorization header (replace with your actual method of authentication)
+
+	// Send the request using the HTTP client
+	resp, err := cred.Client.Do(req)
+	if err != nil {
+		logger.Error("Send request : " + err.Error())
+		return err
+	}
+	defer resp.Body.Close()
+
+	logger.Debug(resp.Status)
+
+	// Check if the response status is OK (200)
+	if resp.StatusCode != http.StatusOK {
+		logger.Error("Response status : " + resp.Status)
+		logger.Error("Response status code : " + string(resp.StatusCode))
+		return fmt.Errorf("API call failed with status %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	// Check if the response is gzip encoded
+	var reader io.Reader = resp.Body
+	if resp.Header.Get("Content-Encoding") == "gzip" {
+		// Create a new gzip reader to decompress the content
+		gzipReader, err := gzip.NewReader(reader)
+		if err != nil {
+			logger.Error(err.Error())
+		}
+		defer gzipReader.Close()
+		reader = gzipReader
+	}
+
+	// Read the decompressed body
+	bodyBytes, err := io.ReadAll(reader)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	// Print the raw response for debugging (you can remove this in production)
+	logger.Debug(string(bodyBytes))
+
+	// If the response is JSON, we can unmarshal it into a Go struct
+	var ticket Ticket //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
+	err = json.Unmarshal(bodyBytes, &ticket)
+	if err != nil {
+		logger.Error(err.Error())
 	}
 
 	return nil

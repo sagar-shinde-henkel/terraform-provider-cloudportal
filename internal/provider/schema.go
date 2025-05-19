@@ -698,3 +698,200 @@ func ticketsSearchSchema() map[string]*schema.Schema {
 		},
 	}
 }
+
+func ticketsSchema() *schema.Resource {
+	return &schema.Resource{
+		//ReadContext: dataSourceTicketsRead, // Your implementation
+		Schema: map[string]*schema.Schema{
+			"view_ticket_list_items": {
+				Type:     schema.TypeList,
+				Computed: true,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"ticket_no": {Type: schema.TypeInt, Computed: true},
+						"title":     {Type: schema.TypeString, Computed: true},
+						"status":    {Type: schema.TypeString, Computed: true},
+						"changed_at": {
+							Type:     schema.TypeString,
+							Computed: true,
+						},
+						"service_provider":         {Type: schema.TypeString, Computed: true},
+						"type":                     {Type: schema.TypeString, Computed: true},
+						"current_responsible_role": {Type: schema.TypeString, Computed: true},
+						"status_changed_at":        {Type: schema.TypeString, Computed: true},
+						"monthly_maintenance_fee":  {Type: schema.TypeFloat, Computed: true},
+						"cloud_costs":              {Type: schema.TypeFloat, Computed: true},
+						"app_owner":                {Type: schema.TypeString, Computed: true},
+						"application_manager":      {Type: schema.TypeString, Computed: true},
+						"cyber_risk_category":      {Type: schema.TypeString, Computed: true},
+						"app_id":                   {Type: schema.TypeString, Computed: true},
+						"app_name":                 {Type: schema.TypeString, Computed: true},
+						"cc_responsible":           {Type: schema.TypeString, Computed: true},
+						"cost_center":              {Type: schema.TypeString, Computed: true},
+						"cost_center_otc":          {Type: schema.TypeString, Computed: true},
+						"requester":                {Type: schema.TypeString, Computed: true},
+						"parent_ticket_no":         {Type: schema.TypeInt, Computed: true},
+						"will_merge_into_parent":   {Type: schema.TypeBool, Computed: true},
+						"sub_status":               {Type: schema.TypeString, Computed: true},
+
+						"changed_by": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							Description: "Details of the user who created the ticket",
+							Elem:        userschema(),
+						},
+						"current_responsible": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							Description: "Details of the user who created the ticket",
+							Elem:        userschema(),
+						},
+
+						"claritycode": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							Description: "Clarity code details",
+							Elem:        claritycodeschema(),
+						},
+
+						"clarity_code_otc": {
+							Type:        schema.TypeList,
+							Optional:    true,
+							Description: "Clarity code details",
+							Elem:        claritycodeschema(),
+						},
+
+						"catalog_items": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"name":                        {Type: schema.TypeString, Computed: true},
+									"resource_name":               {Type: schema.TypeString, Computed: true},
+									"label":                       {Type: schema.TypeString, Computed: true},
+									"catalog_item_disclaimer":     {Type: schema.TypeString, Computed: true},
+									"catalog_item_cloud_platform": {Type: schema.TypeString, Computed: true},
+									"ticket_types": {
+										Type:     schema.TypeList,
+										Computed: true,
+										Elem:     &schema.Schema{Type: schema.TypeString},
+									},
+									"active":                   {Type: schema.TypeBool, Computed: true},
+									"catalog_item_version":     {Type: schema.TypeInt, Computed: true},
+									"catalog_item_created":     {Type: schema.TypeString, Computed: true},
+									"catalog_item_approved":    {Type: schema.TypeString, Computed: true},
+									"catalog_item_approved_by": {Type: schema.TypeString, Computed: true},
+									"catalog_item_icon":        {Type: schema.TypeString, Computed: true},
+									"resource_contract_name":   {Type: schema.TypeString, Computed: true},
+									"resource_container_name":  {Type: schema.TypeString, Computed: true},
+
+									"catalog_fields": {
+										Type:     schema.TypeList,
+										Computed: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"key":              {Type: schema.TypeString, Computed: true},
+												"label":            {Type: schema.TypeString, Computed: true},
+												"value":            {Type: schema.TypeString, Computed: true},
+												"is_mandatory":     {Type: schema.TypeBool, Computed: true},
+												"look_up_function": {Type: schema.TypeString, Computed: true},
+												"look_up_values": {
+													Type:     schema.TypeList,
+													Computed: true,
+													Elem:     &schema.Schema{Type: schema.TypeString},
+												},
+												"hint_value":       {Type: schema.TypeString, Computed: true},
+												"input_type":       {Type: schema.TypeString, Computed: true},
+												"inputformat":      {Type: schema.TypeString, Computed: true},
+												"enable_toggle_by": {Type: schema.TypeString, Computed: true},
+												"disabled":         {Type: schema.TypeString, Computed: true},
+											},
+										},
+									},
+
+									"variables": {
+										Type:     schema.TypeList,
+										Computed: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"id":                             {Type: schema.TypeString, Computed: true},
+												"related_unit":                   {Type: schema.TypeString, Computed: true},
+												"app_id":                         {Type: schema.TypeString, Computed: true},
+												"app_name":                       {Type: schema.TypeString, Computed: true},
+												"read_cloud_governance_terms":    {Type: schema.TypeString, Computed: true},
+												"app_owner":                      {Type: schema.TypeString, Computed: true},
+												"responsible_group_email":        {Type: schema.TypeString, Computed: true},
+												"created":                        {Type: schema.TypeString, Computed: true},
+												"updated":                        {Type: schema.TypeString, Computed: true},
+												"updated_by":                     {Type: schema.TypeString, Computed: true},
+												"status":                         {Type: schema.TypeString, Computed: true},
+												"provisioner_reference_id_value": {Type: schema.TypeString, Computed: true},
+												"provisioner_reference_id_key":   {Type: schema.TypeString, Computed: true},
+												"provisioner_resource_id":        {Type: schema.TypeString, Computed: true},
+												"message":                        {Type: schema.TypeString, Computed: true},
+											},
+										},
+									},
+								},
+							},
+						},
+
+						"billings": {
+							Type:     schema.TypeList,
+							Computed: true,
+							Elem: &schema.Resource{
+								Schema: map[string]*schema.Schema{
+									"id": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"partition_key": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"subscription_name": {
+										Type:     schema.TypeString,
+										Computed: true,
+									},
+									"invoice_periods": {
+										Type:     schema.TypeList,
+										Computed: true,
+										Elem: &schema.Resource{
+											Schema: map[string]*schema.Schema{
+												"key": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+												"invoice_period": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+												"actual_cost": {
+													Type:     schema.TypeFloat,
+													Computed: true,
+												},
+												"start_date": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+												"end_date": {
+													Type:     schema.TypeString,
+													Computed: true,
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+
+			"all_tickets": {
+				Type:     schema.TypeBool,
+				Computed: true,
+			},
+		},
+	}
+}
