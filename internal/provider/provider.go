@@ -48,7 +48,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		if err != nil {
 			log.Fatal("Error initializing logger:", err)
 		}
-		defer logger.Close()
+		//defer logger.Close()
 	}
 	logger.Info("start")
 	if apiKey == "" || baseURL == "" {

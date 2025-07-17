@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/url"
+	"strconv"
+	"time"
 
 	"encoding/json"
 	"net/http"
@@ -223,9 +226,30 @@ type SearchResponse struct {
 
 func dataSourceTicket() *schema.Resource {
 	return &schema.Resource{
-		Read:   dataSourceTicketRead,
-		Schema: TicketSchema(), // Reuse the Ticket schema defined earlier
-
+		Read: dataSourceTicketRead,
+		//Schema: TicketSchema(), // Reuse the Ticket schema defined earlier
+		Schema: map[string]*schema.Schema{
+			"only_active": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+			"assigned_to_me": {
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  true,
+			},
+			"service_providers": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Default:  "cloud",
+			},
+			"full_response": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Full JSON response from the ticket API, as a string. You can parse it in Terraform using jsondecode().",
+			},
+		},
 		// Ensure the 'id' is the only required field for querying the data source
 		// In this case, the `ticket_id` is the identifier to fetch the ticket.
 	}
@@ -286,7 +310,7 @@ func dataSourceTicketSearch() *schema.Resource {
 func dataSourceTicketInventroyRead(d *schema.ResourceData, meta interface{}) error {
 	cred := meta.(*CloudportalAPIClient)
 
-	/*if cred.isdebug {
+	if cred.isdebug {
 		// Create a new logger with debug enabled
 		// Initialize the logger once, using debugEnabled=true
 		_, err := logger.NewLogger(true)
@@ -294,7 +318,7 @@ func dataSourceTicketInventroyRead(d *schema.ResourceData, meta interface{}) err
 			log.Fatal("Error initializing logger:", err)
 		}
 		defer logger.Close()
-	}*/
+	}
 
 	//ticketurl := "https://demand-module-dev.azurewebsites.net/api"
 	// Example: API call to fetch the ticket details by ID
@@ -351,7 +375,7 @@ func dataSourceTicketInventroyRead(d *schema.ResourceData, meta interface{}) err
 	// Check if the response status is OK (200)
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("Response status : " + resp.Status)
-		logger.Error("Response status code : " + string(resp.StatusCode))
+		logger.Error("Response status code : " + strconv.Itoa(resp.StatusCode))
 		return fmt.Errorf("API call failed with status %d: %s", resp.StatusCode, resp.Status)
 	}
 
@@ -469,7 +493,7 @@ func dataSourceTicketSearchRead(d *schema.ResourceData, meta interface{}) error 
 	// Check if the response status is OK (200)
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("Response status : " + resp.Status)
-		logger.Error("Response status code : " + string(resp.StatusCode))
+		logger.Error("Response status code : " + strconv.Itoa(resp.StatusCode))
 		return fmt.Errorf("API call failed with status %d: %s", resp.StatusCode, resp.Status)
 	}
 
@@ -527,31 +551,28 @@ func dataSourceTicketsRead(d *schema.ResourceData, meta interface{}) error {
 		}
 		defer logger.Close()
 	}
-	urloption := ""
+
+	var onlyActive bool
+	var assignedToMe bool
+	var serviceProviders string
+	var ticketType string
+	var avoidAssignmentCheck bool
 
 	if val, ok := d.GetOk("onlyactive"); ok {
-		onlyActive := val.(bool)
-		if onlyActive {
-			urloption = addurloptions(urloption, "onlyActive=", "true")
-		} else {
-			urloption = addurloptions(urloption, "onlyActive=", "false")
-		}
+		onlyActive = val.(bool)
 	}
 	if val, ok := d.GetOk("assignedtome"); ok {
-		assignedToMe := val.(bool)
-		if assignedToMe {
-			urloption = addurloptions(urloption, "assignedToMe=", "true")
-		} else {
-			urloption = addurloptions(urloption, "assignedToMe=", "false")
-		}
+		assignedToMe = val.(bool)
 	}
+
+	url, err := buildTicketAPIURL(cred.BaseURL, &onlyActive, &assignedToMe, &serviceProviders, &ticketType, &avoidAssignmentCheck)
 
 	//ticketurl := "https://demand-module-prod.azurewebsites.net/api/ticket?onlyActive=true&assignedToMe=true&serviceProviders=string"
 	// Example: API call to fetch the ticket details by ID
 	// Replace this with your actual API client logic
 
 	// Construct the URL for fetching the ticket details
-	url := fmt.Sprintf("%s/ticket%s", cred.BaseURL, urloption)
+	//url := fmt.Sprintf("%s/ticket%s", cred.BaseURL, urloption)
 
 	logger.Debug(url)
 
@@ -597,7 +618,7 @@ func dataSourceTicketsRead(d *schema.ResourceData, meta interface{}) error {
 	// Check if the response status is OK (200)
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("Response status : " + resp.Status)
-		logger.Error("Response status code : " + string(resp.StatusCode))
+		logger.Error("Response status code : " + strconv.Itoa(resp.StatusCode))
 		return fmt.Errorf("API call failed with status %d: %s", resp.StatusCode, resp.Status)
 	}
 
@@ -619,13 +640,25 @@ func dataSourceTicketsRead(d *schema.ResourceData, meta interface{}) error {
 		logger.Error(err.Error())
 	}
 
+	// Validate JSON (optional)
+	var jsonCheck interface{}
+	if err := json.Unmarshal(bodyBytes, &jsonCheck); err != nil {
+		logger.Error(err.Error())
+	}
+
 	// Print the raw response for debugging (you can remove this in production)
-	logger.Debug(string(bodyBytes))
+	//logger.Debug(string(bodyBytes))
 
 	// If the response is JSON, we can unmarshal it into a Go struct
 	var ticket Ticket //interface{} // You can replace `interface{}` with a custom struct based on the JSON structure
 	err = json.Unmarshal(bodyBytes, &ticket)
 	if err != nil {
+		logger.Error(err.Error())
+	}
+
+	// Store raw JSON as string
+	d.SetId(time.Now().UTC().String())
+	if err := d.Set("full_response", string(bodyBytes)); err != nil {
 		logger.Error(err.Error())
 	}
 
@@ -702,7 +735,7 @@ func dataSourceTicketRead(d *schema.ResourceData, meta interface{}) error {
 	// Check if the response status is OK (200)
 	if resp.StatusCode != http.StatusOK {
 		logger.Error("Response status : " + resp.Status)
-		logger.Error("Response status code : " + string(resp.StatusCode))
+		logger.Error("Response status code : " + strconv.Itoa(resp.StatusCode))
 		return fmt.Errorf("API call failed with status %d: %s", resp.StatusCode, resp.Status)
 	}
 
@@ -989,4 +1022,40 @@ func flattenTickets(tickets []searchTicket) []map[string]interface{} {
 	}
 
 	return flattened
+}
+
+// buildTicketAPIURL builds the API URL and includes only non-nil/non-zero parameters.
+func buildTicketAPIURL(
+	baseURL string,
+	onlyActive *bool,
+	assignedToMe *bool,
+	serviceProviders *string,
+	ticketType *string,
+	avoidAssignmentCheck *bool,
+) (string, error) {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid base URL: %w", err)
+	}
+
+	q := u.Query()
+
+	if onlyActive != nil {
+		q.Set("onlyActive", fmt.Sprintf("%t", *onlyActive))
+	}
+	if assignedToMe != nil {
+		q.Set("assignedToMe", fmt.Sprintf("%t", *assignedToMe))
+	}
+	if serviceProviders != nil && *serviceProviders != "" {
+		q.Set("serviceProviders", *serviceProviders)
+	}
+	if ticketType != nil && *ticketType != "" {
+		q.Set("ticketType", *ticketType)
+	}
+	if avoidAssignmentCheck != nil {
+		q.Set("avoidAssignmentCheck", fmt.Sprintf("%t", *avoidAssignmentCheck))
+	}
+
+	u.RawQuery = q.Encode()
+	return u.String(), nil
 }
